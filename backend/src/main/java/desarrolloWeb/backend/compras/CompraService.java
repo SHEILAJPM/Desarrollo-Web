@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -42,6 +43,32 @@ public class CompraService {
         return compras.stream()
                 .filter(c -> c.getProveedorId().equals(proveedorId))
                 .toList();
+    }
+
+    public Optional<Compra> buscarPorId(Long id) {
+        return compras.stream()
+                .filter(c -> c.getId().equals(id))
+                .findFirst();
+    }
+
+    public Compra actualizar(Long id, String rucProveedor, String numeroComprobante, Double montoSinIgv, LocalDate fecha) {
+        Compra compra = buscarPorId(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe una compra con id " + id));
+
+        Proveedor proveedor = proveedorService.buscarPorRuc(rucProveedor)
+                .orElseThrow(() -> new NoSuchElementException("No existe un proveedor con RUC " + rucProveedor));
+
+        compra.setProveedorId(proveedor.getId());
+        compra.setNumeroComprobante(numeroComprobante);
+        compra.setMontoSinIgv(montoSinIgv);
+        compra.setFecha(fecha);
+        return compra;
+    }
+
+    public void eliminar(Long id) {
+        Compra compra = buscarPorId(id)
+                .orElseThrow(() -> new NoSuchElementException("No existe una compra con id " + id));
+        compras.remove(compra);
     }
 
     public List<Compra> listarPorPeriodo(LocalDate desde, LocalDate hasta) {

@@ -45,4 +45,33 @@ public class CompraController {
             @RequestParam LocalDate hasta) {
         return ResponseEntity.ok(compraService.calcularTotalIgvPeriodo(desde, hasta));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
+        return compraService.buscarPorId(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No existe una compra con id " + id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody RegistrarCompraRequest request) {
+        try {
+            Compra actualizada = compraService.actualizar(
+                    id, request.ruc(), request.numeroComprobante(), request.montoSinIgv(), request.fecha());
+            return ResponseEntity.ok(actualizada);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        try {
+            compraService.eliminar(id);
+            return ResponseEntity.noContent().build();
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }
