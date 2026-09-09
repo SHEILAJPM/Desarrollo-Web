@@ -1,11 +1,16 @@
-package desarrolloWeb.backend.personal;
+package desarrolloWeb.backend.personal.trabajadores;
 
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 
+
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/personal")
 public class PersonalController {
@@ -30,17 +35,24 @@ public class PersonalController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity<?> registrar(@RequestBody Trabajador nuevo) {
-        try {
-            Trabajador creado = personalService.registrar(nuevo);
-            return ResponseEntity.status(HttpStatus.CREATED).body(creado);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+@PostMapping
+public ResponseEntity<?> registrar(@RequestBody Trabajador nuevo) {
+
+    System.out.println("NOMBRES: " + nuevo.getNombres());
+    System.out.println("DOCUMENTO: " + nuevo.getDocumentoIdentidad());
+    System.out.println("CARGO: " + nuevo.getCargo());
+    System.out.println("AREA: " + nuevo.getArea());
+    System.out.println("ESTADO: " + nuevo.getEstado());
+
+    try {
+        Trabajador creado = personalService.registrar(nuevo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    } catch (IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
+}
 
     @PutMapping("/{id}")
     public ResponseEntity<Trabajador> actualizar(@PathVariable Long id, @RequestBody Trabajador cambios) {

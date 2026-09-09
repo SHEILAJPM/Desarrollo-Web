@@ -1,7 +1,7 @@
-package desarrolloWeb.backend.asistencia;
+package desarrolloWeb.backend.personal.asistencia;
 
-import desarrolloWeb.backend.personal.PersonalService;
-import desarrolloWeb.backend.personal.Trabajador;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

@@ -1,7 +1,8 @@
-package desarrolloWeb.backend.documentos;
+package desarrolloWeb.backend.personal.documentos;
 
-import desarrolloWeb.backend.personal.PersonalService;
-import desarrolloWeb.backend.personal.Trabajador;
+import desarrolloWeb.backend.personal.documentos.Documento;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

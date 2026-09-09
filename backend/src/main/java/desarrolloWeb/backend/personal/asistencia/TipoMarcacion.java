@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.asistencia;
+package desarrolloWeb.backend.personal.asistencia;
 
 public enum TipoMarcacion {
     ENTRADA,

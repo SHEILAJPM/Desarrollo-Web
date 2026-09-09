@@ -1,5 +1,6 @@
-package desarrolloWeb.backend.documentos;
+package desarrolloWeb.backend.personal.documentos;
 
+import desarrolloWeb.backend.personal.documentos.Documento;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
+@CrossOrigin(origins = "http://127.0.0.1:5500")
 @RequestMapping("/api/documentos")
 public class DocumentoController {
 

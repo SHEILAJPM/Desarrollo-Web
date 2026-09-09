@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.documentos;
+package desarrolloWeb.backend.personal.documentos;
 
 import java.time.LocalDate;
 

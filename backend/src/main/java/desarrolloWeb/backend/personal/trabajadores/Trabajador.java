@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.personal;
+package desarrolloWeb.backend.personal.trabajadores;
 
 public class Trabajador {
 
@@ -12,7 +12,8 @@ public class Trabajador {
     public Trabajador() {
     }
 
-    public Trabajador(Long id, String nombres, String documentoIdentidad, String cargo, String area, String estado) {
+    public Trabajador(Long id, String nombres, String documentoIdentidad,
+                      String cargo, String area, String estado) {
         this.id = id;
         this.nombres = nombres;
         this.documentoIdentidad = documentoIdentidad;

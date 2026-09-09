@@ -1,5 +1,6 @@
-package desarrolloWeb.backend.personal;
+package desarrolloWeb.backend.personal.trabajadores;
 
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

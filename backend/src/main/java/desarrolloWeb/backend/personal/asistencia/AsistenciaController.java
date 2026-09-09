@@ -1,11 +1,14 @@
-package desarrolloWeb.backend.asistencia;
+package desarrolloWeb.backend.personal.asistencia;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+
+@CrossOrigin(origins = "*")
 
 @RestController
 @RequestMapping("/api/asistencia")
