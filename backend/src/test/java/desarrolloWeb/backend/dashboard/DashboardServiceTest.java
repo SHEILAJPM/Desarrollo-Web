@@ -30,17 +30,17 @@ class DashboardServiceTest {
         AsistenciaService asistenciaService =
                 new AsistenciaService(personalService);
 
+        ProveedorService proveedorService =
+                new ProveedorService();
+
         PagoService pagoService =
-                new PagoService(personalService);
+                new PagoService(personalService, proveedorService);
 
         DocumentoService documentoService =
                 new DocumentoService(personalService);
 
-        ProveedorService proveedorService =
-                new ProveedorService();
-
         CompraService compraService =
-                new CompraService(proveedorService);
+                new CompraService(proveedorService, pagoService);
 
         ClienteService clienteService =
                 new ClienteService();
@@ -122,7 +122,7 @@ class DashboardServiceTest {
         assertEquals(1, metricas.totalTrabajadores());
         assertEquals(1, metricas.trabajadoresActivos());
         assertEquals(1, metricas.totalMarcaciones());
-        assertEquals(1, metricas.pagosPendientes());
+        assertEquals(2, metricas.pagosPendientes());
         assertEquals(1, metricas.documentosProximosAVencer());
         assertEquals(1, metricas.totalCompras());
         assertEquals(1, metricas.totalVentas());

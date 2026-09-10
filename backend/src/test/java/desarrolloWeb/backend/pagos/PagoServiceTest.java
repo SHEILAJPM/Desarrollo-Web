@@ -2,6 +2,8 @@ package desarrolloWeb.backend.pagos;
 
 import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.personal.trabajadores.Trabajador;
+import desarrolloWeb.backend.proveedores.Proveedor;
+import desarrolloWeb.backend.proveedores.ProveedorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,15 +16,19 @@ import static org.junit.jupiter.api.Assertions.*;
 class PagoServiceTest {
 
     private PersonalService personalService;
+    private ProveedorService proveedorService;
     private PagoService pagoService;
     private Trabajador trabajador;
+    private Proveedor proveedor;
 
     @BeforeEach
     void setUp() {
         personalService = new PersonalService();
-        pagoService = new PagoService(personalService);
+        proveedorService = new ProveedorService();
+        pagoService = new PagoService(personalService, proveedorService);
         trabajador = personalService.registrar(
                 new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null));
+        proveedor = proveedorService.registrar("20123456789", "Distribuidora SAC");
     }
 
     @Test
@@ -37,7 +43,28 @@ class PagoServiceTest {
                 trabajador.getDocumentoIdentidad(), "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
 
         assertNotNull(pago.getId());
+        assertEquals("TRABAJADOR", pago.getTipoBeneficiario());
         assertEquals(trabajador.getId(), pago.getTrabajadorId());
+        assertNull(pago.getProveedorId());
+        assertEquals("PENDIENTE", pago.getEstado());
+        assertNull(pago.getFechaPago());
+    }
+
+    @Test
+    void registrarProveedorConRucInexistenteLanzaExcepcion() {
+        assertThrows(NoSuchElementException.class,
+                () -> pagoService.registrarProveedor("99999999999", "Factura F001-1", 500.0, LocalDate.of(2026, 8, 31)));
+    }
+
+    @Test
+    void registrarProveedorQuedaComoPendienteLigadoAlProveedor() {
+        Pago pago = pagoService.registrarProveedor(
+                proveedor.getRuc(), "Factura F001-1", 500.0, LocalDate.of(2026, 8, 31));
+
+        assertNotNull(pago.getId());
+        assertEquals("PROVEEDOR", pago.getTipoBeneficiario());
+        assertEquals(proveedor.getId(), pago.getProveedorId());
+        assertNull(pago.getTrabajadorId());
         assertEquals("PENDIENTE", pago.getEstado());
         assertNull(pago.getFechaPago());
     }

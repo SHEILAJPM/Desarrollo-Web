@@ -2,6 +2,8 @@ package desarrolloWeb.backend.pagos;
 
 import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.personal.trabajadores.Trabajador;
+import desarrolloWeb.backend.proveedores.Proveedor;
+import desarrolloWeb.backend.proveedores.ProveedorService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,11 +18,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PagoService {
 
     private final PersonalService personalService;
+    private final ProveedorService proveedorService;
     private final List<Pago> pagos = new ArrayList<>();
     private final AtomicLong contadorId = new AtomicLong(0);
 
-    public PagoService(PersonalService personalService) {
+    public PagoService(PersonalService personalService, ProveedorService proveedorService) {
         this.personalService = personalService;
+        this.proveedorService = proveedorService;
     }
 
     public Pago registrar(String documentoIdentidad, String concepto, Double monto, LocalDate fechaProgramada) {
@@ -30,7 +34,25 @@ public class PagoService {
 
         Pago pago = new Pago();
         pago.setId(contadorId.incrementAndGet());
+        pago.setTipoBeneficiario("TRABAJADOR");
         pago.setTrabajadorId(trabajador.getId());
+        pago.setConcepto(concepto);
+        pago.setMonto(monto);
+        pago.setFechaProgramada(fechaProgramada);
+        pago.setEstado("PENDIENTE");
+
+        pagos.add(pago);
+        return pago;
+    }
+
+    public Pago registrarProveedor(String ruc, String concepto, Double monto, LocalDate fechaProgramada) {
+        Proveedor proveedor = proveedorService.buscarPorRuc(ruc)
+                .orElseThrow(() -> new NoSuchElementException("No existe un proveedor con RUC " + ruc));
+
+        Pago pago = new Pago();
+        pago.setId(contadorId.incrementAndGet());
+        pago.setTipoBeneficiario("PROVEEDOR");
+        pago.setProveedorId(proveedor.getId());
         pago.setConcepto(concepto);
         pago.setMonto(monto);
         pago.setFechaProgramada(fechaProgramada);

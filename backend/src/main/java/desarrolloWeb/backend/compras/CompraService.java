@@ -1,5 +1,6 @@
 package desarrolloWeb.backend.compras;
 
+import desarrolloWeb.backend.pagos.PagoService;
 import desarrolloWeb.backend.proveedores.Proveedor;
 import desarrolloWeb.backend.proveedores.ProveedorService;
 import org.springframework.stereotype.Service;
@@ -15,11 +16,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CompraService {
 
     private final ProveedorService proveedorService;
+    private final PagoService pagoService;
     private final List<Compra> compras = new ArrayList<>();
     private final AtomicLong contadorId = new AtomicLong(0);
 
-    public CompraService(ProveedorService proveedorService) {
+    public CompraService(ProveedorService proveedorService, PagoService pagoService) {
         this.proveedorService = proveedorService;
+        this.pagoService = pagoService;
     }
 
     public Compra registrar(String rucProveedor, String numeroComprobante, Double montoSinIgv, LocalDate fecha) {
@@ -34,6 +37,10 @@ public class CompraService {
         compra.setFecha(fecha);
 
         compras.add(compra);
+
+        pagoService.registrarProveedor(
+                rucProveedor, "Compra " + numeroComprobante, compra.getMontoTotal(), fecha);
+
         return compra;
     }
 

@@ -1,6 +1,8 @@
 package desarrolloWeb.backend.tributario;
 
 import desarrolloWeb.backend.compras.CompraService;
+import desarrolloWeb.backend.pagos.PagoService;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.proveedores.ProveedorService;
 import desarrolloWeb.backend.ventas.ClienteService;
 import desarrolloWeb.backend.ventas.VentaService;
@@ -18,7 +20,8 @@ class TributarioServiceTest {
     @BeforeEach
     void setUp() {
         ProveedorService proveedorService = new ProveedorService();
-        CompraService compraService = new CompraService(proveedorService);
+        PagoService pagoService = new PagoService(new PersonalService(), proveedorService);
+        CompraService compraService = new CompraService(proveedorService, pagoService);
         ClienteService clienteService = new ClienteService();
         VentaService ventaService = new VentaService(clienteService);
         tributarioService = new TributarioService(compraService, ventaService);

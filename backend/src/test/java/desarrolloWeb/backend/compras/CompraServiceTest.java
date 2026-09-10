@@ -1,5 +1,8 @@
 package desarrolloWeb.backend.compras;
 
+import desarrolloWeb.backend.pagos.Pago;
+import desarrolloWeb.backend.pagos.PagoService;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.proveedores.Proveedor;
 import desarrolloWeb.backend.proveedores.ProveedorService;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,13 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompraServiceTest {
 
     private ProveedorService proveedorService;
+    private PagoService pagoService;
     private CompraService compraService;
     private Proveedor proveedor;
 
     @BeforeEach
     void setUp() {
         proveedorService = new ProveedorService();
-        compraService = new CompraService(proveedorService);
+        pagoService = new PagoService(new PersonalService(), proveedorService);
+        compraService = new CompraService(proveedorService, pagoService);
         proveedor = proveedorService.registrar("20123456789", "Distribuidora ACME S.A.C.");
     }
 
@@ -39,6 +44,19 @@ class CompraServiceTest {
         assertEquals(proveedor.getId(), compra.getProveedorId());
         assertEquals(18.0, compra.getIgv(), 0.001);
         assertEquals(118.0, compra.getMontoTotal(), 0.001);
+    }
+
+    @Test
+    void registrarCompraCreaPagoPendienteAlProveedor() {
+        Compra compra = compraService.registrar(
+                proveedor.getRuc(), "F001-1", 100.0, LocalDate.now());
+
+        List<Pago> pendientes = pagoService.listarPendientes();
+
+        assertEquals(1, pendientes.size());
+        assertEquals("PROVEEDOR", pendientes.get(0).getTipoBeneficiario());
+        assertEquals(proveedor.getId(), pendientes.get(0).getProveedorId());
+        assertEquals(compra.getMontoTotal(), pendientes.get(0).getMonto(), 0.001);
     }
 
     @Test

@@ -541,6 +541,74 @@ async function cargarDocumentosPorVencer() {
 }
 
 /* =========================================
+   COMPRAS - SELECT DE PROVEEDORES
+   ========================================= */
+
+const rucCompraSelect =
+    document.querySelector("#rucCompra");
+
+function llenarSelectProveedores(proveedores) {
+
+    if (!rucCompraSelect) {
+        return;
+    }
+
+    rucCompraSelect.innerHTML = `
+        <option value="">Selecciona un proveedor...</option>
+    `;
+
+    if (proveedores.length === 0) {
+        rucCompraSelect.innerHTML = `
+            <option value="">No hay proveedores registrados</option>
+        `;
+        return;
+    }
+
+    proveedores.forEach(function (proveedor) {
+
+        const opcion =
+            document.createElement("option");
+
+        opcion.value = proveedor.ruc;
+        opcion.textContent =
+            `${proveedor.razonSocial} (${proveedor.ruc})`;
+
+        rucCompraSelect.appendChild(opcion);
+    });
+}
+
+async function cargarProveedoresParaCompras() {
+
+    if (!rucCompraSelect) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(`${API_URL}/api/proveedores`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener proveedores");
+        }
+
+        const proveedores =
+            await respuesta.json();
+
+        llenarSelectProveedores(proveedores);
+
+    } catch (error) {
+
+        console.error(error);
+
+        rucCompraSelect.innerHTML = `
+            <option value="">No se pudieron cargar proveedores. Revisa el backend.</option>
+        `;
+    }
+}
+
+
+/* =========================================
    COMPRAS - REGISTRAR
    ========================================= */
 
@@ -969,6 +1037,7 @@ if (formularioProveedor) {
             formularioProveedor.reset();
 
             cargarProveedores();
+            cargarProveedoresParaCompras();
 
             console.log("Proveedor creado:", proveedorCreado);
 
@@ -1139,6 +1208,34 @@ async function cargarTrabajadoresParaPagos() {
     }
 }
 
+async function cargarProveedoresParaPagos() {
+
+    if (!tbodyPagos) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(`${API_URL}/api/proveedores`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener proveedores");
+        }
+
+        const proveedores =
+            await respuesta.json();
+
+        localStorage.setItem(
+            "proveedores",
+            JSON.stringify(proveedores)
+        );
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 async function cargarPagos(url = `${API_URL}/api/pagos`) {
 
     if (!tbodyPagos) {
@@ -1175,6 +1272,32 @@ async function cargarPagos(url = `${API_URL}/api/pagos`) {
     }
 }
 
+function obtenerNombreBeneficiario(pago) {
+
+    if (pago.tipoBeneficiario === "PROVEEDOR") {
+
+        const proveedores =
+            JSON.parse(localStorage.getItem("proveedores") || "[]");
+
+        const proveedor =
+            proveedores.find(p => p.id === pago.proveedorId);
+
+        return proveedor
+            ? `${proveedor.razonSocial} (Proveedor)`
+            : `Proveedor #${pago.proveedorId}`;
+    }
+
+    const trabajadores =
+        JSON.parse(localStorage.getItem("trabajadores") || "[]");
+
+    const trabajador =
+        trabajadores.find(t => t.id === pago.trabajadorId);
+
+    return trabajador
+        ? trabajador.nombres
+        : `Trabajador #${pago.trabajadorId}`;
+}
+
 function mostrarPagos(pagos) {
 
     if (!tbodyPagos) {
@@ -1202,7 +1325,7 @@ function mostrarPagos(pagos) {
                 : `<button type="button" data-pago-id="${pago.id}">Pagar</button>`;
 
         fila.innerHTML = `
-            <td>${pago.trabajadorId}</td>
+            <td>${obtenerNombreBeneficiario(pago)}</td>
             <td>${pago.concepto}</td>
             <td>S/ ${Number(pago.monto).toFixed(2)}</td>
             <td>${pago.fechaProgramada}</td>
@@ -1390,7 +1513,9 @@ cargarDocumentosPorVencer();
 cargarCompras();
 cargarVentas();
 cargarProveedores();
+cargarProveedoresParaCompras();
 cargarTrabajadoresParaPagos();
+cargarProveedoresParaPagos();
 cargarPagos();
 
 

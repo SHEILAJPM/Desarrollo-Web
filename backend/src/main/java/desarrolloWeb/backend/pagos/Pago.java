@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 public class Pago {
 
     private Long id;
+    private String tipoBeneficiario;
     private Long trabajadorId;
+    private Long proveedorId;
     private String concepto;
     private Double monto;
     private LocalDate fechaProgramada;
@@ -21,12 +23,28 @@ public class Pago {
         this.id = id;
     }
 
+    public String getTipoBeneficiario() {
+        return tipoBeneficiario;
+    }
+
+    public void setTipoBeneficiario(String tipoBeneficiario) {
+        this.tipoBeneficiario = tipoBeneficiario;
+    }
+
     public Long getTrabajadorId() {
         return trabajadorId;
     }
 
     public void setTrabajadorId(Long trabajadorId) {
         this.trabajadorId = trabajadorId;
+    }
+
+    public Long getProveedorId() {
+        return proveedorId;
+    }
+
+    public void setProveedorId(Long proveedorId) {
+        this.proveedorId = proveedorId;
     }
 
     public String getConcepto() {
