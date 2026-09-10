@@ -21,20 +21,38 @@ class DocumentoServiceTest {
     void setUp() {
         personalService = new PersonalService();
         documentoService = new DocumentoService(personalService);
+
         trabajador = personalService.registrar(
-                new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null));
+                new Trabajador(
+                        null,
+                        "Ana Torres",
+                        "70001234",
+                        "Analista",
+                        "Ventas",
+                        null
+                )
+        );
     }
 
     @Test
     void registrarConDocumentoInexistenteLanzaExcepcion() {
-        assertThrows(NoSuchElementException.class,
-                () -> documentoService.registrar("99999999", "DNI", LocalDate.now().plusDays(10)));
+        assertThrows(
+                NoSuchElementException.class,
+                () -> documentoService.registrar(
+                        "99999999",
+                        "DNI",
+                        LocalDate.now().plusDays(10)
+                )
+        );
     }
 
     @Test
     void registrarQuedaLigadoAlTrabajador() {
         Documento documento = documentoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Licencia de conducir", LocalDate.now().plusDays(10));
+                trabajador.getDocumentoIdentidad(),
+                "Licencia de conducir",
+                LocalDate.now().plusDays(10)
+        );
 
         assertNotNull(documento.getId());
         assertEquals(trabajador.getId(), documento.getTrabajadorId());
@@ -44,11 +62,19 @@ class DocumentoServiceTest {
     @Test
     void listarProximosAVencerIncluyeSoloLosDentroDelRango() {
         Documento porVencer = documentoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Licencia de conducir", LocalDate.now().plusDays(5));
-        documentoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Contrato", LocalDate.now().plusDays(90));
+                trabajador.getDocumentoIdentidad(),
+                "Licencia de conducir",
+                LocalDate.now().plusDays(5)
+        );
 
-        List<Documento> proximos = documentoService.listarProximosAVencer(30);
+        documentoService.registrar(
+                trabajador.getDocumentoIdentidad(),
+                "Contrato",
+                LocalDate.now().plusDays(90)
+        );
+
+        List<Documento> proximos =
+                documentoService.listarProximosAVencer(30);
 
         assertEquals(1, proximos.size());
         assertEquals(porVencer.getId(), proximos.get(0).getId());
@@ -57,11 +83,19 @@ class DocumentoServiceTest {
     @Test
     void listarVencidosIncluyeSoloFechasPasadas() {
         Documento vencido = documentoService.registrar(
-                trabajador.getDocumentoIdentidad(), "DNI", LocalDate.now().minusDays(1));
-        documentoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Contrato", LocalDate.now().plusDays(10));
+                trabajador.getDocumentoIdentidad(),
+                "DNI",
+                LocalDate.now().minusDays(1)
+        );
 
-        List<Documento> vencidos = documentoService.listarVencidos();
+        documentoService.registrar(
+                trabajador.getDocumentoIdentidad(),
+                "Contrato",
+                LocalDate.now().plusDays(10)
+        );
+
+        List<Documento> vencidos =
+                documentoService.listarVencidos();
 
         assertEquals(1, vencidos.size());
         assertEquals(vencido.getId(), vencidos.get(0).getId());
@@ -69,10 +103,20 @@ class DocumentoServiceTest {
 
     @Test
     void listarPorTrabajadorDevuelveSoloSusDocumentos() {
-        documentoService.registrar(trabajador.getDocumentoIdentidad(), "DNI", LocalDate.now().plusDays(30));
-        documentoService.registrar(trabajador.getDocumentoIdentidad(), "Contrato", LocalDate.now().plusDays(60));
+        documentoService.registrar(
+                trabajador.getDocumentoIdentidad(),
+                "DNI",
+                LocalDate.now().plusDays(30)
+        );
 
-        List<Documento> documentos = documentoService.listarPorTrabajador(trabajador.getId());
+        documentoService.registrar(
+                trabajador.getDocumentoIdentidad(),
+                "Contrato",
+                LocalDate.now().plusDays(60)
+        );
+
+        List<Documento> documentos =
+                documentoService.listarPorTrabajador(trabajador.getId());
 
         assertEquals(2, documentos.size());
     }

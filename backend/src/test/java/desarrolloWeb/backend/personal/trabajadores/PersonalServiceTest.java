@@ -1,5 +1,7 @@
 package desarrolloWeb.backend.personal.trabajadores;
 
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
