@@ -92,6 +92,11 @@ async function cargarTrabajadores() {
         const trabajadores =
             await respuesta.json();
 
+        localStorage.setItem(
+            "trabajadores",
+            JSON.stringify(trabajadores)
+        );
+
         lista.innerHTML = "";
 
         if (trabajadores.length === 0) {
@@ -1050,6 +1055,332 @@ async function cargarProveedores() {
 
 
 /* =========================================
+   PAGOS
+   ========================================= */
+
+const formularioPago =
+    document.querySelector("#pagoForm");
+
+const trabajadorSelect =
+    document.querySelector("#trabajadorSelect");
+
+const tbodyPagos =
+    document.querySelector("#tbody");
+
+let pagosActuales = [];
+
+function llenarSelectTrabajadores(trabajadores) {
+
+    trabajadorSelect.innerHTML = `
+        <option value="">Selecciona un trabajador...</option>
+    `;
+
+    if (trabajadores.length === 0) {
+        trabajadorSelect.innerHTML = `
+            <option value="">No hay trabajadores registrados</option>
+        `;
+        return;
+    }
+
+    trabajadores.forEach(function (trabajador) {
+
+        const opcion =
+            document.createElement("option");
+
+        opcion.value = trabajador.documentoIdentidad;
+        opcion.dataset.trabajadorId = trabajador.id;
+        opcion.textContent =
+            `${trabajador.nombres} (${trabajador.documentoIdentidad})`;
+
+        trabajadorSelect.appendChild(opcion);
+    });
+}
+
+async function cargarTrabajadoresParaPagos() {
+
+    if (!trabajadorSelect) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(`${API_URL}/api/personal`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener trabajadores");
+        }
+
+        const trabajadores =
+            await respuesta.json();
+
+        localStorage.setItem(
+            "trabajadores",
+            JSON.stringify(trabajadores)
+        );
+
+        llenarSelectTrabajadores(trabajadores);
+
+    } catch (error) {
+
+        console.error(error);
+
+        const trabajadoresGuardados =
+            JSON.parse(localStorage.getItem("trabajadores") || "[]");
+
+        if (trabajadoresGuardados.length > 0) {
+            llenarSelectTrabajadores(trabajadoresGuardados);
+            return;
+        }
+
+        trabajadorSelect.innerHTML = `
+            <option value="">No se pudieron cargar trabajadores. Revisa el backend.</option>
+        `;
+    }
+}
+
+async function cargarPagos(url = `${API_URL}/api/pagos`) {
+
+    if (!tbodyPagos) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(url);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener pagos");
+        }
+
+        const pagos =
+            await respuesta.json();
+
+        pagosActuales = pagos;
+        mostrarPagos(pagos);
+        actualizarResumenPagos();
+
+    } catch (error) {
+
+        console.error(error);
+
+        tbodyPagos.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    No se pudieron cargar los pagos.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function mostrarPagos(pagos) {
+
+    if (!tbodyPagos) {
+        return;
+    }
+
+    const emptyState =
+        document.querySelector("#emptyState");
+
+    tbodyPagos.innerHTML = "";
+
+    if (emptyState) {
+        emptyState.style.display =
+            pagos.length === 0 ? "block" : "none";
+    }
+
+    pagos.forEach(function (pago) {
+
+        const fila =
+            document.createElement("tr");
+
+        const botonPagar =
+            pago.estado === "PAGADO"
+                ? ""
+                : `<button type="button" data-pago-id="${pago.id}">Pagar</button>`;
+
+        fila.innerHTML = `
+            <td>${pago.trabajadorId}</td>
+            <td>${pago.concepto}</td>
+            <td>S/ ${Number(pago.monto).toFixed(2)}</td>
+            <td>${pago.fechaProgramada}</td>
+            <td>${pago.estado}</td>
+            <td>${botonPagar}</td>
+        `;
+
+        tbodyPagos.appendChild(fila);
+    });
+}
+
+function actualizarResumenPagos() {
+
+    const totalPendiente =
+        document.querySelector("#totalPendiente");
+    const totalPagado =
+        document.querySelector("#totalPagado");
+    const countPendiente =
+        document.querySelector("#countPendiente");
+
+    if (!totalPendiente || !totalPagado || !countPendiente) {
+        return;
+    }
+
+    const pendientes =
+        pagosActuales.filter(pago => pago.estado === "PENDIENTE");
+    const pagados =
+        pagosActuales.filter(pago => pago.estado === "PAGADO");
+
+    const montoPendiente =
+        pendientes.reduce((total, pago) => total + Number(pago.monto), 0);
+    const montoPagado =
+        pagados.reduce((total, pago) => total + Number(pago.monto), 0);
+
+    totalPendiente.textContent =
+        `S/ ${montoPendiente.toFixed(2)}`;
+    totalPagado.textContent =
+        `S/ ${montoPagado.toFixed(2)}`;
+    countPendiente.textContent =
+        pendientes.length;
+}
+
+if (formularioPago) {
+
+    formularioPago.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const pago = {
+            documentoIdentidad: document.querySelector("#trabajadorSelect").value,
+            concepto: document.querySelector("#concepto").value,
+            monto: parseFloat(document.querySelector("#monto").value),
+            fechaProgramada: document.querySelector("#fecha").value
+        };
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/pagos`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(pago)
+                }
+            );
+
+            if (!respuesta.ok) {
+                const mensaje = await respuesta.text();
+                throw new Error(mensaje);
+            }
+
+            formularioPago.reset();
+            cargarPagos();
+
+            const formError =
+                document.querySelector("#formError");
+
+            if (formError) {
+                formError.textContent = "";
+            }
+
+            alert("Pago registrado correctamente");
+
+        } catch (error) {
+
+            console.error(error);
+
+            const formError =
+                document.querySelector("#formError");
+
+            if (formError) {
+                formError.textContent =
+                    "No se pudo registrar el pago.";
+            }
+        }
+    });
+}
+
+if (tbodyPagos) {
+
+    tbodyPagos.addEventListener("click", async function (event) {
+
+        const boton =
+            event.target.closest("button[data-pago-id]");
+
+        if (!boton) {
+            return;
+        }
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/pagos/${boton.dataset.pagoId}/pagar`,
+                {
+                    method: "PUT"
+                }
+            );
+
+            if (!respuesta.ok) {
+                throw new Error("No se pudo marcar como pagado");
+            }
+
+            cargarPagos();
+
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo marcar el pago como pagado.");
+        }
+    });
+}
+
+const tabTodos =
+    document.querySelector("#tabTodos");
+const tabPendientes =
+    document.querySelector("#tabPendientes");
+const tabTrabajador =
+    document.querySelector("#tabTrabajador");
+const btnBuscarPorId =
+    document.querySelector("#btnBuscarPorId");
+
+if (tabTodos) {
+    tabTodos.addEventListener("click", function () {
+        document.querySelector("#trabajadorFilterBox").style.display = "none";
+        cargarPagos();
+    });
+}
+
+if (tabPendientes) {
+    tabPendientes.addEventListener("click", function () {
+        document.querySelector("#trabajadorFilterBox").style.display = "none";
+        cargarPagos(`${API_URL}/api/pagos/pendientes`);
+    });
+}
+
+if (tabTrabajador) {
+    tabTrabajador.addEventListener("click", function () {
+        document.querySelector("#trabajadorFilterBox").style.display = "block";
+    });
+}
+
+if (btnBuscarPorId) {
+    btnBuscarPorId.addEventListener("click", function () {
+
+        const trabajadorId =
+            document.querySelector("#trabajadorIdInput").value;
+
+        if (!trabajadorId) {
+            return;
+        }
+
+        cargarPagos(`${API_URL}/api/pagos/trabajador/${trabajadorId}`);
+    });
+}
+
+
+/* =========================================
    INICIAR APLICACIÓN
    ========================================= */
 
@@ -1059,3 +1390,7 @@ cargarDocumentosPorVencer();
 cargarCompras();
 cargarVentas();
 cargarProveedores();
+cargarTrabajadoresParaPagos();
+cargarPagos();
+
+
