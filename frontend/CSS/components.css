@@ -77,7 +77,12 @@ button:focus-visible {
 #trabajadores,
 #asistencia,
 #documentos,
-#documentos-proximos {
+#documentos-proximos,
+main > #compras,
+#resumenCompras,
+main > #ventas,
+#resumenVentas,
+main > #proveedores {
     margin-bottom: 1rem;
     padding: 1.5rem;
     background-color: var(--color-white);
@@ -87,7 +92,12 @@ button:focus-visible {
 #trabajadores h2,
 #asistencia h2,
 #documentos h2,
-#documentos-proximos h2 {
+#documentos-proximos h2,
+main > #compras h2,
+#resumenCompras h2,
+main > #ventas h2,
+#resumenVentas h2,
+main > #proveedores h2 {
     margin-top: 0;
     color: var(--color-primary);
 }
@@ -155,7 +165,12 @@ tbody tr:hover {
     #trabajadores,
     #asistencia,
     #documentos,
-    #documentos-proximos {
+    #documentos-proximos,
+    main > #compras,
+    #resumenCompras,
+    main > #ventas,
+    #resumenVentas,
+    main > #proveedores {
         padding: 2rem;
     }
 

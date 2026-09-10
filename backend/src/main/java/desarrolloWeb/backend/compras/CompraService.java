@@ -1,5 +1,7 @@
 package desarrolloWeb.backend.compras;
 
+import desarrolloWeb.backend.proveedores.Proveedor;
+import desarrolloWeb.backend.proveedores.ProveedorService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

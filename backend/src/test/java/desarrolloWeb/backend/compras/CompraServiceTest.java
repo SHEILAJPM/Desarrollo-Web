@@ -1,5 +1,7 @@
 package desarrolloWeb.backend.compras;
 
+import desarrolloWeb.backend.proveedores.Proveedor;
+import desarrolloWeb.backend.proveedores.ProveedorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

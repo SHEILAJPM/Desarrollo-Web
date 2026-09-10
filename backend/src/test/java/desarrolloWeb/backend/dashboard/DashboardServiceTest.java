@@ -1,13 +1,13 @@
 package desarrolloWeb.backend.dashboard;
 
-import desarrolloWeb.backend.asistencia.AsistenciaService;
-import desarrolloWeb.backend.asistencia.TipoMarcacion;
+import desarrolloWeb.backend.personal.asistencia.AsistenciaService;
+import desarrolloWeb.backend.personal.asistencia.TipoMarcacion;
 import desarrolloWeb.backend.compras.CompraService;
-import desarrolloWeb.backend.compras.ProveedorService;
-import desarrolloWeb.backend.documentos.DocumentoService;
+import desarrolloWeb.backend.proveedores.ProveedorService;
+import desarrolloWeb.backend.personal.documentos.DocumentoService;
 import desarrolloWeb.backend.pagos.PagoService;
-import desarrolloWeb.backend.personal.PersonalService;
-import desarrolloWeb.backend.personal.Trabajador;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import desarrolloWeb.backend.ventas.ClienteService;
 import desarrolloWeb.backend.ventas.VentaService;
 import org.junit.jupiter.api.BeforeEach;

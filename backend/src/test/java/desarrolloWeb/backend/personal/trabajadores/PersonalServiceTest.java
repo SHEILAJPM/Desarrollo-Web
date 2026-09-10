@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.personal;
+package desarrolloWeb.backend.personal.trabajadores;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

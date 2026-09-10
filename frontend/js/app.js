@@ -536,9 +536,526 @@ async function cargarDocumentosPorVencer() {
 }
 
 /* =========================================
+   COMPRAS - REGISTRAR
+   ========================================= */
+
+const formularioCompra =
+    document.querySelector("#formCompra");
+
+if (formularioCompra) {
+
+    formularioCompra.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const compra = {
+            ruc: document.querySelector("#rucCompra").value,
+            numeroComprobante: document.querySelector("#numeroComprobante").value,
+            montoSinIgv: parseFloat(document.querySelector("#montoSinIgv").value),
+            fecha: document.querySelector("#fechaCompra").value
+        };
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/compras`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(compra)
+                }
+            );
+
+            if (!respuesta.ok) {
+
+                const mensaje = await respuesta.text();
+
+                console.error("Error de API:", mensaje);
+
+                throw new Error("No se pudo registrar la compra");
+            }
+
+            const compraCreada = await respuesta.json();
+
+            alert("Compra registrada correctamente");
+
+            formularioCompra.reset();
+
+            cargarCompras();
+
+            console.log("Compra creada:", compraCreada);
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "No se pudo registrar la compra. " +
+                "Verifica que el RUC del proveedor exista."
+            );
+        }
+    });
+}
+
+
+/* =========================================
+   COMPRAS - LISTAR
+   ========================================= */
+
+async function cargarCompras() {
+
+    const lista =
+        document.querySelector("#listaCompras");
+
+    if (!lista) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(`${API_URL}/api/compras`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener las compras");
+        }
+
+        const compras =
+            await respuesta.json();
+
+        lista.innerHTML = "";
+
+        if (compras.length === 0) {
+
+            lista.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        No hay compras registradas.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        compras.forEach(function (compra) {
+
+            const fila =
+                document.createElement("tr");
+
+            fila.innerHTML = `
+                <td>${compra.id}</td>
+                <td>${compra.proveedorId}</td>
+                <td>${compra.numeroComprobante}</td>
+                <td>S/ ${compra.montoSinIgv.toFixed(2)}</td>
+                <td>S/ ${compra.igv.toFixed(2)}</td>
+                <td>S/ ${compra.montoTotal.toFixed(2)}</td>
+                <td>${compra.fecha}</td>
+            `;
+
+            lista.appendChild(fila);
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        lista.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    No se pudieron cargar las compras.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* =========================================
+   COMPRAS - RESUMEN DE IGV POR PERIODO
+   ========================================= */
+
+const formularioIgvPeriodo =
+    document.querySelector("#formIgvPeriodo");
+
+if (formularioIgvPeriodo) {
+
+    formularioIgvPeriodo.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const desde = document.querySelector("#desdeIgv").value;
+        const hasta = document.querySelector("#hastaIgv").value;
+
+        const resultado =
+            document.querySelector("#resultadoIgv");
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/compras/igv-periodo?desde=${desde}&hasta=${hasta}`
+            );
+
+            if (!respuesta.ok) {
+                throw new Error("Error al calcular el IGV del periodo");
+            }
+
+            const totalIgv = await respuesta.json();
+
+            resultado.innerHTML = `
+                <article>
+                    <h3>
+                        Total de IGV pagado: S/ ${totalIgv.toFixed(2)}
+                    </h3>
+                </article>
+            `;
+
+        } catch (error) {
+
+            console.error(error);
+
+            resultado.innerHTML = `
+                <article>
+                    <p>No se pudo calcular el IGV del periodo.</p>
+                </article>
+            `;
+        }
+    });
+}
+
+
+/* =========================================
+   VENTAS - REGISTRAR
+   ========================================= */
+
+const formularioVenta =
+    document.querySelector("#formVenta");
+
+if (formularioVenta) {
+
+    formularioVenta.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const venta = {
+            documentoCliente: document.querySelector("#documentoCliente").value,
+            numeroComprobante: document.querySelector("#numeroComprobanteVenta").value,
+            montoSinIgv: parseFloat(document.querySelector("#montoSinIgvVenta").value),
+            fecha: document.querySelector("#fechaVenta").value
+        };
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/ventas`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(venta)
+                }
+            );
+
+            if (!respuesta.ok) {
+
+                const mensaje = await respuesta.text();
+
+                console.error("Error de API:", mensaje);
+
+                throw new Error("No se pudo registrar la venta");
+            }
+
+            const ventaCreada = await respuesta.json();
+
+            alert("Venta registrada correctamente");
+
+            formularioVenta.reset();
+
+            cargarVentas();
+
+            console.log("Venta creada:", ventaCreada);
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "No se pudo registrar la venta. " +
+                "Verifica que el documento del cliente exista."
+            );
+        }
+    });
+}
+
+
+/* =========================================
+   VENTAS - LISTAR
+   ========================================= */
+
+async function cargarVentas() {
+
+    const lista =
+        document.querySelector("#listaVentas");
+
+    if (!lista) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(`${API_URL}/api/ventas`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener las ventas");
+        }
+
+        const ventas =
+            await respuesta.json();
+
+        lista.innerHTML = "";
+
+        if (ventas.length === 0) {
+
+            lista.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        No hay ventas registradas.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        ventas.forEach(function (venta) {
+
+            const fila =
+                document.createElement("tr");
+
+            fila.innerHTML = `
+                <td>${venta.id}</td>
+                <td>${venta.clienteId}</td>
+                <td>${venta.numeroComprobante}</td>
+                <td>S/ ${venta.montoSinIgv.toFixed(2)}</td>
+                <td>S/ ${venta.igv.toFixed(2)}</td>
+                <td>S/ ${venta.montoTotal.toFixed(2)}</td>
+                <td>${venta.fecha}</td>
+            `;
+
+            lista.appendChild(fila);
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        lista.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    No se pudieron cargar las ventas.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* =========================================
+   VENTAS - RESUMEN DE IGV POR PERIODO
+   ========================================= */
+
+const formularioIgvPeriodoVenta =
+    document.querySelector("#formIgvPeriodoVenta");
+
+if (formularioIgvPeriodoVenta) {
+
+    formularioIgvPeriodoVenta.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const desde = document.querySelector("#desdeIgvVenta").value;
+        const hasta = document.querySelector("#hastaIgvVenta").value;
+
+        const resultado =
+            document.querySelector("#resultadoIgvVenta");
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/ventas/igv-periodo?desde=${desde}&hasta=${hasta}`
+            );
+
+            if (!respuesta.ok) {
+                throw new Error("Error al calcular el IGV del periodo");
+            }
+
+            const totalIgv = await respuesta.json();
+
+            resultado.innerHTML = `
+                <article>
+                    <h3>
+                        Total de IGV cobrado: S/ ${totalIgv.toFixed(2)}
+                    </h3>
+                </article>
+            `;
+
+        } catch (error) {
+
+            console.error(error);
+
+            resultado.innerHTML = `
+                <article>
+                    <p>No se pudo calcular el IGV del periodo.</p>
+                </article>
+            `;
+        }
+    });
+}
+
+
+/* =========================================
+   PROVEEDORES - REGISTRAR
+   ========================================= */
+
+const formularioProveedor =
+    document.querySelector("#formProveedor");
+
+if (formularioProveedor) {
+
+    formularioProveedor.addEventListener("submit", async function (event) {
+
+        event.preventDefault();
+
+        const proveedor = {
+            ruc: document.querySelector("#rucProveedor").value,
+            razonSocial: document.querySelector("#razonSocial").value
+        };
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/api/proveedores`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(proveedor)
+                }
+            );
+
+            if (!respuesta.ok) {
+
+                const mensaje = await respuesta.text();
+
+                console.error("Error de API:", mensaje);
+
+                throw new Error("No se pudo registrar el proveedor");
+            }
+
+            const proveedorCreado = await respuesta.json();
+
+            alert("Proveedor registrado correctamente");
+
+            formularioProveedor.reset();
+
+            cargarProveedores();
+
+            console.log("Proveedor creado:", proveedorCreado);
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "No se pudo registrar el proveedor. " +
+                "Verifica que el RUC no esté repetido."
+            );
+        }
+    });
+}
+
+
+/* =========================================
+   PROVEEDORES - LISTAR
+   ========================================= */
+
+async function cargarProveedores() {
+
+    const lista =
+        document.querySelector("#listaProveedores");
+
+    if (!lista) {
+        return;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(`${API_URL}/api/proveedores`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener los proveedores");
+        }
+
+        const proveedores =
+            await respuesta.json();
+
+        lista.innerHTML = "";
+
+        if (proveedores.length === 0) {
+
+            lista.innerHTML = `
+                <tr>
+                    <td colspan="3">
+                        No hay proveedores registrados.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        proveedores.forEach(function (proveedor) {
+
+            const fila =
+                document.createElement("tr");
+
+            fila.innerHTML = `
+                <td>${proveedor.id}</td>
+                <td>${proveedor.ruc}</td>
+                <td>${proveedor.razonSocial}</td>
+            `;
+
+            lista.appendChild(fila);
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        lista.innerHTML = `
+            <tr>
+                <td colspan="3">
+                    No se pudieron cargar los proveedores.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* =========================================
    INICIAR APLICACIÓN
    ========================================= */
 
 cargarTrabajadores();
 cargarDocumentos();
 cargarDocumentosPorVencer();
+cargarCompras();
+cargarVentas();
+cargarProveedores();

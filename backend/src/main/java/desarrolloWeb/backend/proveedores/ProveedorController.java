@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.compras;
+package desarrolloWeb.backend.proveedores;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/proveedores")
 public class ProveedorController {

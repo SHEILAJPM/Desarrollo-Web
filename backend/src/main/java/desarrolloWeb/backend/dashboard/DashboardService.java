@@ -1,10 +1,10 @@
 package desarrolloWeb.backend.dashboard;
 
-import desarrolloWeb.backend.asistencia.AsistenciaService;
+import desarrolloWeb.backend.personal.asistencia.AsistenciaService;
 import desarrolloWeb.backend.compras.CompraService;
-import desarrolloWeb.backend.documentos.DocumentoService;
+import desarrolloWeb.backend.personal.documentos.DocumentoService;
 import desarrolloWeb.backend.pagos.PagoService;
-import desarrolloWeb.backend.personal.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.ventas.VentaService;
 import org.springframework.stereotype.Service;
 

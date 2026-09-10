@@ -1,7 +1,7 @@
 package desarrolloWeb.backend.tributario;
 
 import desarrolloWeb.backend.compras.CompraService;
-import desarrolloWeb.backend.compras.ProveedorService;
+import desarrolloWeb.backend.proveedores.ProveedorService;
 import desarrolloWeb.backend.ventas.ClienteService;
 import desarrolloWeb.backend.ventas.VentaService;
 import org.junit.jupiter.api.BeforeEach;

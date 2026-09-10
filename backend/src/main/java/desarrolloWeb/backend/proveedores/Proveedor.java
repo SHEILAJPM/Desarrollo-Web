@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.compras;
+package desarrolloWeb.backend.proveedores;
 
 public class Proveedor {
 

@@ -1,4 +1,4 @@
-package desarrolloWeb.backend.compras;
+package desarrolloWeb.backend.proveedores;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

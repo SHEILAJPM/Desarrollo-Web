@@ -1,7 +1,7 @@
-package desarrolloWeb.backend.documentos;
+package desarrolloWeb.backend.personal.documentos;
 
-import desarrolloWeb.backend.personal.PersonalService;
-import desarrolloWeb.backend.personal.Trabajador;
+import desarrolloWeb.backend.personal.trabajadores.PersonalService;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
