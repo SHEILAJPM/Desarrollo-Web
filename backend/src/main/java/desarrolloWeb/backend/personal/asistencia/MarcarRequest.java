@@ -1,6 +1,10 @@
 package desarrolloWeb.backend.personal.asistencia;
 
-import desarrolloWeb.backend.personal.asistencia.TipoMarcacion;
+import java.time.LocalDateTime;
 
-public record MarcarRequest(String documentoIdentidad, TipoMarcacion tipo, Double latitud, Double longitud) {
+public record MarcarRequest(
+        String documentoIdentidad,
+        TipoMarcacion tipo,
+        LocalDateTime fechaHora
+) {
 }

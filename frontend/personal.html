@@ -43,47 +43,23 @@
 
                 <label for="nombres">Nombres</label>
 
-                <input
-                    type="text"
-                    id="nombres"
-                    name="nombres"
-                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,100}"
-                    title="Ingrese solo letras y espacios"
-                    required
-                >
+                <input type="text" id="nombres" name="nombres" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,100}"
+                    title="Ingrese solo letras y espacios" required>
 
                 <label for="documentoIdentidad">
                     Documento de identidad
                 </label>
 
-                <input
-                    type="text"
-                    id="documentoIdentidad"
-                    name="documentoIdentidad"
-                    pattern="[0-9]{8}"
-                    maxlength="8"
-                    inputmode="numeric"
-                    title="Ingrese 8 dígitos"
-                    required
-                >
+                <input type="text" id="documentoIdentidad" name="documentoIdentidad" pattern="[0-9]{8}" maxlength="8"
+                    inputmode="numeric" title="Ingrese 8 dígitos" required>
 
                 <label for="cargo">Cargo</label>
 
-                <input
-                    type="text"
-                    id="cargo"
-                    name="cargo"
-                    required
-                >
+                <input type="text" id="cargo" name="cargo" required>
 
                 <label for="areaTrabajador">Área</label>
 
-                <input
-                    type="text"
-                    id="areaTrabajador"
-                    name="areaTrabajador"
-                    required
-                >
+                <input type="text" id="areaTrabajador" name="areaTrabajador" required>
 
                 <button type="submit">
                     Registrar trabajador
@@ -106,23 +82,6 @@
                     </thead>
 
                     <tbody id="listaTrabajadores">
-
-                        <tr>
-                            <td>1</td>
-                            <td>Juan Pérez</td>
-                            <td>Administración</td>
-                            <td>Asistente</td>
-                            <td>Activo</td>
-                        </tr>
-
-                        <tr>
-                            <td>2</td>
-                            <td>María López</td>
-                            <td>Recursos Humanos</td>
-                            <td>Analista</td>
-                            <td>Activo</td>
-                        </tr>
-
                     </tbody>
 
                 </table>
@@ -133,56 +92,63 @@
 
         <section id="asistencia">
 
-            <h2>Asistencia</h2>
+            <h2>Registro de Asistencia</h2>
 
             <p>
-                Consulta la asistencia de un trabajador.
+                Registra la asistencia de un trabajador.
             </p>
 
             <form id="formAsistencia">
 
-                <label for="trabajadorId">
-                    ID del empleado
+                <label for="documentoAsistencia">
+                    Documento de identidad
                 </label>
 
-                <input
-                    type="number"
-                    id="trabajadorId"
-                    name="trabajadorId"
-                    min="1"
-                    max="999999"
-                    required
-                >
+                <input type="text" id="documentoAsistencia" name="documentoAsistencia" pattern="[0-9]{8}" maxlength="8"
+                    inputmode="numeric" required>
 
-                <label for="area">
-                    Área
+                <label for="tipoAsistencia">
+                    Tipo de marcación
                 </label>
 
-                <input
-                    type="text"
-                    id="area"
-                    name="area"
-                    required
-                >
+                <select id="tipoAsistencia" name="tipoAsistencia" required>
+                    <option value="">Seleccione</option>
+                    <option value="ENTRADA">Entrada</option>
+                    <option value="SALIDA">Salida</option>
+                </select>
 
-                <label for="fecha">
-                    Fecha
+                <label for="horaAsistencia">
+                    Hora
                 </label>
 
-                <input
-                    type="date"
-                    id="fecha"
-                    name="fecha"
-                    required
-                >
+                <input type="time" id="horaAsistencia" name="horaAsistencia" required>
 
                 <button type="submit">
-                    Consultar asistencia
+                    Registrar asistencia
                 </button>
 
                 <div id="resultadoAsistencia"></div>
 
             </form>
+
+
+            <h2>Consultar Asistencia</h2>
+
+            <form id="formConsultaAsistencia">
+
+                <label for="consultaTrabajadorId">
+                    ID del empleado
+                </label>
+
+                <input type="number" id="consultaTrabajadorId" name="consultaTrabajadorId" min="1" required>
+
+                <button type="submit">
+                    Consultar asistencia
+                </button>
+
+            </form>
+
+            <div id="resultadoConsultaAsistencia"></div>
 
         </section>
 

@@ -8,8 +8,6 @@ public class Marcacion {
     private Long trabajadorId;
     private TipoMarcacion tipo;
     private LocalDateTime fechaHora;
-    private Double latitud;
-    private Double longitud;
 
     public Long getId() {
         return id;
@@ -41,21 +39,5 @@ public class Marcacion {
 
     public void setFechaHora(LocalDateTime fechaHora) {
         this.fechaHora = fechaHora;
-    }
-
-    public Double getLatitud() {
-        return latitud;
-    }
-
-    public void setLatitud(Double latitud) {
-        this.latitud = latitud;
-    }
-
-    public Double getLongitud() {
-        return longitud;
-    }
-
-    public void setLongitud(Double longitud) {
-        this.longitud = longitud;
     }
 }

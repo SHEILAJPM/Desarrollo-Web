@@ -1,4 +1,4 @@
-console.log("app.js cargado");
+
 
 const API_URL = "http://localhost:8080";
 
@@ -92,10 +92,6 @@ async function cargarTrabajadores() {
         const trabajadores =
             await respuesta.json();
 
-        localStorage.setItem(
-            "trabajadores",
-            JSON.stringify(trabajadores)
-        );
 
         lista.innerHTML = "";
 
@@ -142,104 +138,82 @@ async function cargarTrabajadores() {
     }
 }
 
+/* ASISTENCIA - REGISTRAR Y CONSULTAR */
 
-/*  ASISTENCIA*/
-
-const formulario =
+const formularioAsistencia =
     document.querySelector("#formAsistencia");
 
-if (formulario) {
+if (formularioAsistencia) {
 
-    formulario.addEventListener("submit", async function (event) {
+    formularioAsistencia.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
-        const trabajadorId =
-            document.querySelector("#trabajadorId").value;
+        const documento =
+            document.querySelector("#documentoAsistencia").value;
+
+        const tipo =
+            document.querySelector("#tipoAsistencia").value;
+
+        const hora =
+            document.querySelector("#horaAsistencia").value;
 
         const resultado =
             document.querySelector("#resultadoAsistencia");
 
         try {
 
+            const ahora = new Date();
+
+            const fecha =
+                ahora.toISOString().split("T")[0];
+
+            const fechaHora =
+                `${fecha}T${hora}:00`;
+
             const respuesta = await fetch(
-                `${API_URL}/api/asistencia/trabajador/${trabajadorId}`
+                `${API_URL}/api/asistencia/marcar`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        documentoIdentidad: documento,
+                        tipo: tipo,
+                        fechaHora: fechaHora
+                    })
+                }
             );
 
             if (!respuesta.ok) {
-                throw new Error(
-                    "Error al consultar la asistencia"
-                );
+
+                const mensaje =
+                    await respuesta.text();
+
+                throw new Error(mensaje);
             }
 
-            const asistencias =
+            const asistencia =
                 await respuesta.json();
 
-            console.log(
-                "Asistencias:",
-                asistencias
-            );
-
-            if (asistencias.length === 0) {
-
-                resultado.innerHTML = `
-                    <article>
-                        <p>
-                            No hay registros de asistencia
-                            para este trabajador.
-                        </p>
-                    </article>
-                `;
-
-                return;
-            }
-
-            let contenido = `
+            resultado.innerHTML = `
                 <article>
+                    <p>
+                        Asistencia registrada correctamente.
+                    </p>
 
-                    <h3>Registros de asistencia</h3>
+                    <p>
+                        Tipo: ${asistencia.tipo}
+                    </p>
 
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tipo</th>
-                                <th>Fecha y hora</th>
-                                <th>Latitud</th>
-                                <th>Longitud</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-            `;
-
-            asistencias.forEach(function (asistencia) {
-
-                contenido += `
-                    <tr>
-                        <td>${asistencia.id}</td>
-                        <td>${asistencia.tipo}</td>
-                        <td>
-                            ${new Date(
-                    asistencia.fechaHora
-                ).toLocaleString("es-PE")}
-                        </td>
-                        <td>${asistencia.latitud}</td>
-                        <td>${asistencia.longitud}</td>
-                    </tr>
-                `;
-            });
-
-            contenido += `
-                        </tbody>
-
-                    </table>
-
+                    <p>
+                        Hora: ${hora}
+                    </p>
                 </article>
             `;
 
-            resultado.innerHTML = contenido;
+            formularioAsistencia.reset();
 
         } catch (error) {
 
@@ -248,15 +222,138 @@ if (formulario) {
             resultado.innerHTML = `
                 <article>
                     <p>
-                        No se pudo consultar
-                        la asistencia.
+                        No se pudo registrar la asistencia.
                     </p>
                 </article>
             `;
         }
+
     });
 }
 
+
+/* ASISTENCIA - CONSULTAR */
+
+const formularioConsultaAsistencia =
+    document.querySelector("#formConsultaAsistencia");
+
+if (formularioConsultaAsistencia) {
+
+    formularioConsultaAsistencia.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+            const trabajadorId =
+                document.querySelector(
+                    "#consultaTrabajadorId"
+                ).value;
+
+            const resultado =
+                document.querySelector(
+                    "#resultadoConsultaAsistencia"
+                );
+
+            try {
+
+                const respuesta = await fetch(
+                    `${API_URL}/api/asistencia/trabajador/${trabajadorId}`
+                );
+
+                if (!respuesta.ok) {
+
+                    throw new Error(
+                        "Error al consultar la asistencia"
+                    );
+                }
+
+                const asistencias =
+                    await respuesta.json();
+
+                if (asistencias.length === 0) {
+
+                    resultado.innerHTML = `
+                        <article>
+                            <p>
+                                No hay registros de asistencia
+                                para este trabajador.
+                            </p>
+                        </article>
+                    `;
+
+                    return;
+                }
+
+                let contenido = `
+                    <article>
+
+                        <h3>
+                            Registros de asistencia
+                        </h3>
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tipo</th>
+                                    <th>Fecha y hora</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+                `;
+
+                asistencias.forEach(function (asistencia) {
+
+                    contenido += `
+                        <tr>
+                            <td>${asistencia.id}</td>
+
+                            <td>
+                                ${asistencia.tipo}
+                            </td>
+
+                            <td>
+                                ${new Date(
+                                    asistencia.fechaHora
+                                ).toLocaleString("es-PE")}
+                            </td>
+                        </tr>
+                    `;
+
+                });
+
+                contenido += `
+                            </tbody>
+
+                        </table>
+
+                    </article>
+                `;
+
+                resultado.innerHTML = contenido;
+
+            } catch (error) {
+
+                console.error(error);
+
+                resultado.innerHTML = `
+                    <article>
+                        <p>
+                            No se pudo consultar
+                            la asistencia.
+                        </p>
+                    </article>
+                `;
+            }
+
+        }
+    );
+}
 
 /* DOCUMENTOS - REGISTRAR*/
 
@@ -351,9 +448,7 @@ if (formularioDocumento) {
 }
 
 
-/* =========================================
-   DOCUMENTOS - LISTAR
-   ========================================= */
+/*  DOCUMENTOS - LISTAR */
 
 async function cargarDocumentos() {
 
@@ -462,9 +557,7 @@ async function cargarDocumentos() {
         `;
     }
 }
-/* =========================================
-   DOCUMENTOS - PRÓXIMOS A VENCER
-   ========================================= */
+/* OCUMENTOS - PRÓXIMOS A VENCER*/
 
 async function cargarDocumentosPorVencer() {
 
@@ -1183,10 +1276,6 @@ async function cargarTrabajadoresParaPagos() {
         const trabajadores =
             await respuesta.json();
 
-        localStorage.setItem(
-            "trabajadores",
-            JSON.stringify(trabajadores)
-        );
 
         llenarSelectTrabajadores(trabajadores);
 

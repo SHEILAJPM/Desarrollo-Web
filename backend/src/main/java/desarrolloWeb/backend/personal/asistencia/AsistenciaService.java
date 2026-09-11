@@ -21,20 +21,26 @@ public class AsistenciaService {
         this.personalService = personalService;
     }
 
-    public Marcacion marcar(String documentoIdentidad, TipoMarcacion tipo, Double latitud, Double longitud) {
-        Trabajador trabajador = personalService.buscarPorDocumento(documentoIdentidad)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "No existe un trabajador con documento " + documentoIdentidad));
+    public Marcacion marcar(
+            String documentoIdentidad,
+            TipoMarcacion tipo,
+            LocalDateTime fechaHora) {
+
+        Trabajador trabajador =
+                personalService.buscarPorDocumento(documentoIdentidad)
+                        .orElseThrow(() -> new NoSuchElementException(
+                                "No existe un trabajador con documento "
+                                        + documentoIdentidad));
 
         Marcacion marcacion = new Marcacion();
+
         marcacion.setId(contadorId.incrementAndGet());
         marcacion.setTrabajadorId(trabajador.getId());
         marcacion.setTipo(tipo);
-        marcacion.setFechaHora(LocalDateTime.now());
-        marcacion.setLatitud(latitud);
-        marcacion.setLongitud(longitud);
+        marcacion.setFechaHora(fechaHora);
 
         marcaciones.add(marcacion);
+
         return marcacion;
     }
 

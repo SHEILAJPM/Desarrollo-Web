@@ -3,13 +3,11 @@ package desarrolloWeb.backend.personal.asistencia;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @CrossOrigin(origins = "*")
-
 @RestController
 @RequestMapping("/api/asistencia")
 public class AsistenciaController {
@@ -24,20 +22,35 @@ public class AsistenciaController {
     public ResponseEntity<?> marcar(@RequestBody MarcarRequest request) {
         try {
             Marcacion registrada = asistenciaService.marcar(
-                    request.documentoIdentidad(), request.tipo(), request.latitud(), request.longitud());
-            return ResponseEntity.status(HttpStatus.CREATED).body(registrada);
+                    request.documentoIdentidad(),
+                    request.tipo(),
+                    request.fechaHora()
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(registrada);
+
         } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
         }
     }
 
     @GetMapping
     public ResponseEntity<List<Marcacion>> listar() {
-        return ResponseEntity.ok(asistenciaService.listarTodas());
+        return ResponseEntity.ok(
+                asistenciaService.listarTodas()
+        );
     }
 
     @GetMapping("/trabajador/{trabajadorId}")
-    public ResponseEntity<List<Marcacion>> listarPorTrabajador(@PathVariable Long trabajadorId) {
-        return ResponseEntity.ok(asistenciaService.listarPorTrabajador(trabajadorId));
+    public ResponseEntity<List<Marcacion>> listarPorTrabajador(
+            @PathVariable Long trabajadorId) {
+
+        return ResponseEntity.ok(
+                asistenciaService.listarPorTrabajador(trabajadorId)
+        );
     }
 }
