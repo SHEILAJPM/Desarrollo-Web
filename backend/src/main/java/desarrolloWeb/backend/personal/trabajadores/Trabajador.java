@@ -1,8 +1,19 @@
 package desarrolloWeb.backend.personal.trabajadores;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "trabajadores")
 public class Trabajador {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String nombres;
     private String documentoIdentidad;
     private String cargo;

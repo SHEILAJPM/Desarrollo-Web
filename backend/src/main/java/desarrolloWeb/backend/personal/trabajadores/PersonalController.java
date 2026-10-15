@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 
-
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/personal")
@@ -28,6 +27,12 @@ public class PersonalController {
         return ResponseEntity.ok(personalService.listar(area, estado));
     }
 
+    @GetMapping("/area/{area}")
+    public ResponseEntity<List<Trabajador>> listarPorArea(
+            @PathVariable String area) {
+        return ResponseEntity.ok(personalService.listarPorArea(area));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Trabajador> obtener(@PathVariable Long id) {
         return personalService.buscarPorId(id)
@@ -35,24 +40,24 @@ public class PersonalController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-@PostMapping
-public ResponseEntity<?> registrar(@RequestBody Trabajador nuevo) {
+    @PostMapping
+    public ResponseEntity<?> registrar(@RequestBody Trabajador nuevo) {
 
-    System.out.println("NOMBRES: " + nuevo.getNombres());
-    System.out.println("DOCUMENTO: " + nuevo.getDocumentoIdentidad());
-    System.out.println("CARGO: " + nuevo.getCargo());
-    System.out.println("AREA: " + nuevo.getArea());
-    System.out.println("ESTADO: " + nuevo.getEstado());
+        System.out.println("NOMBRES: " + nuevo.getNombres());
+        System.out.println("DOCUMENTO: " + nuevo.getDocumentoIdentidad());
+        System.out.println("CARGO: " + nuevo.getCargo());
+        System.out.println("AREA: " + nuevo.getArea());
+        System.out.println("ESTADO: " + nuevo.getEstado());
 
-    try {
-        Trabajador creado = personalService.registrar(nuevo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
-    } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    } catch (IllegalStateException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        try {
+            Trabajador creado = personalService.registrar(nuevo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
-}
 
     @PutMapping("/{id}")
     public ResponseEntity<Trabajador> actualizar(@PathVariable Long id, @RequestBody Trabajador cambios) {

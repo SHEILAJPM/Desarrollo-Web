@@ -1,13 +1,29 @@
+
 package desarrolloWeb.backend.personal.asistencia;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "marcaciones")
 public class Marcacion {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "trabajador_id", nullable = false)
     private Long trabajadorId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TipoMarcacion tipo;
+
+    @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
+
+    public Marcacion() {
+    }
 
     public Long getId() {
         return id;

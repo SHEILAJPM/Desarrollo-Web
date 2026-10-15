@@ -1,63 +1,77 @@
+
 package desarrolloWeb.backend.personal.documentos;
 
-import desarrolloWeb.backend.personal.documentos.Documento;
 import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.personal.trabajadores.Trabajador;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class DocumentoService {
 
     private final PersonalService personalService;
-    private final List<Documento> documentos = new ArrayList<>();
-    private final AtomicLong contadorId = new AtomicLong(0);
+    private final DocumentoRepository documentoRepository;
 
-    public DocumentoService(PersonalService personalService) {
+    public DocumentoService(
+            PersonalService personalService,
+            DocumentoRepository documentoRepository) {
         this.personalService = personalService;
+        this.documentoRepository = documentoRepository;
     }
 
-    public Documento registrar(String documentoIdentidadTrabajador, String tipo, LocalDate fechaVencimiento) {
-        Trabajador trabajador = personalService.buscarPorDocumento(documentoIdentidadTrabajador)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "No existe un trabajador con documento " + documentoIdentidadTrabajador));
+    @Transactional
+    public Documento registrar(
+            String documentoIdentidadTrabajador,
+            String tipo,
+            LocalDate fechaVencimiento) {
+
+        Trabajador trabajador =
+                personalService.buscarPorDocumento(
+                        documentoIdentidadTrabajador
+                ).orElseThrow(() -> new NoSuchElementException(
+                        "No existe un trabajador con documento "
+                                + documentoIdentidadTrabajador));
 
         Documento documento = new Documento();
-        documento.setId(contadorId.incrementAndGet());
         documento.setTrabajadorId(trabajador.getId());
         documento.setTipo(tipo);
         documento.setFechaVencimiento(fechaVencimiento);
 
-        documentos.add(documento);
-        return documento;
+        return documentoRepository.save(documento);
     }
 
     public List<Documento> listarTodos() {
-        return documentos;
+        return documentoRepository.findAll();
     }
 
     public List<Documento> listarPorTrabajador(Long trabajadorId) {
-        return documentos.stream()
-                .filter(d -> d.getTrabajadorId().equals(trabajadorId))
-                .toList();
+        return documentoRepository.findByTrabajadorId(trabajadorId);
+    }
+
+    public List<Documento> listarPorTrabajadorJPQL(Long trabajadorId) {
+        return documentoRepository.buscarPorTrabajadorJPQL(trabajadorId);
     }
 
     public List<Documento> listarProximosAVencer(int diasUmbral) {
         LocalDate hoy = LocalDate.now();
-        LocalDate limite = hoy.plusDays(diasUmbral);
-        return documentos.stream()
-                .filter(d -> !d.getFechaVencimiento().isBefore(hoy) && !d.getFechaVencimiento().isAfter(limite))
+        LocalDate limite = hoy.plusDays(Math.max(0, diasUmbral));
+
+        return documentoRepository.findAll().stream()
+                .filter(d -> d.getFechaVencimiento() != null)
+                .filter(d -> !d.getFechaVencimiento().isBefore(hoy))
+                .filter(d -> !d.getFechaVencimiento().isAfter(limite))
                 .toList();
     }
 
     public List<Documento> listarVencidos() {
         LocalDate hoy = LocalDate.now();
-        return documentos.stream()
+
+        return documentoRepository.findAll().stream()
+                .filter(d -> d.getFechaVencimiento() != null)
                 .filter(d -> d.getFechaVencimiento().isBefore(hoy))
                 .toList();
     }

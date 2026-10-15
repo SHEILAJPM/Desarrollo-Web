@@ -53,4 +53,12 @@ public class AsistenciaController {
                 asistenciaService.listarPorTrabajador(trabajadorId)
         );
     }
+    @GetMapping("/trabajador/{trabajadorId}/jpql")
+public ResponseEntity<List<Marcacion>> listarPorTrabajadorJPQL(
+        @PathVariable Long trabajadorId) {
+
+    return ResponseEntity.ok(
+            asistenciaService.listarPorTrabajadorJPQL(trabajadorId)
+    );
+}
 }

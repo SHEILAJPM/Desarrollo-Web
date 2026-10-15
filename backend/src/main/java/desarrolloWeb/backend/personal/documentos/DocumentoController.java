@@ -40,6 +40,17 @@ public class DocumentoController {
         return ResponseEntity.ok(documentoService.listarPorTrabajador(trabajadorId));
     }
 
+    
+@GetMapping("/trabajador/{trabajadorId}/jpql")
+public ResponseEntity<List<Documento>> listarPorTrabajadorJPQL(
+        @PathVariable Long trabajadorId) {
+
+    return ResponseEntity.ok(
+            documentoService.listarPorTrabajadorJPQL(trabajadorId)
+    );
+}
+
+
     @GetMapping("/proximos-a-vencer")
     public ResponseEntity<List<Documento>> listarProximosAVencer(
             @RequestParam(defaultValue = "30") int dias) {
