@@ -152,37 +152,85 @@
 
         </section>
 
-        <section id="documentos">
+       
+<section id="documentos">
 
-            <h2>Documentos</h2>
+    <h2>Documentos</h2>
 
-            <p>
-                Consulta los documentos registrados y revisa cuáles
-                están próximos a vencer.
-            </p>
+    <p>
+        Registra documentos de los trabajadores y consulta
+        sus fechas de vencimiento.
+    </p>
 
-            <article class="tabla-contenedor">
+    <form id="formDocumento">
 
-                <table>
+        <label for="documentoIdentidadDocumento">
+            Documento de identidad del trabajador
+        </label>
 
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Documento</th>
-                            <th>Trabajador ID</th>
-                            <th>Vencimiento</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
+        <input
+            type="text"
+            id="documentoIdentidadDocumento"
+            name="documentoIdentidadDocumento"
+            pattern="[0-9]{8}"
+            maxlength="8"
+            inputmode="numeric"
+            title="Ingrese los 8 dígitos del documento del trabajador registrado"
+            required
+        >
 
-                    <tbody id="listaDocumentos">
-                    </tbody>
+        <label for="tipoDocumento">
+            Tipo de documento
+        </label>
 
-                </table>
+        <select id="tipoDocumento" name="tipoDocumento" required>
+            <option value="">Seleccione un documento</option>
+            <option value="DNI">DNI</option>
+            <option value="Contrato">Contrato</option>
+            <option value="Certificado médico">Certificado médico</option>
+            <option value="Certificado de estudios">Certificado de estudios</option>
+            <option value="Otro">Otro</option>
+        </select>
 
-            </article>
+        <label for="fechaVencimientoDocumento">
+            Fecha de vencimiento
+        </label>
 
-        </section>
+        <input
+            type="date"
+            id="fechaVencimientoDocumento"
+            name="fechaVencimientoDocumento"
+            required
+        >
+
+        <button type="submit">
+            Registrar documento
+        </button>
+
+        <p id="resultadoDocumento" role="status"></p>
+
+    </form>
+
+    <article class="tabla-contenedor">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Documento</th>
+                    <th>Trabajador ID</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+
+            <tbody id="listaDocumentos"></tbody>
+        </table>
+
+    </article>
+
+</section>
+
 
         <section id="documentosPorVencer">
 

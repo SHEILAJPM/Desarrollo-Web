@@ -2,234 +2,215 @@
 
 const API_URL = "http://localhost:8080";
 
-
-/* PERSONAL - REGISTRAR TRABAJADOR*/
+/* PERSONAL - REGISTRAR TRABAJADOR */
 
 const formularioTrabajador =
     document.querySelector("#formTrabajador");
 
 if (formularioTrabajador) {
-
     formularioTrabajador.addEventListener("submit", async function (event) {
-
         event.preventDefault();
 
         const trabajador = {
-            nombres: document.querySelector("#nombres").value,
-            documentoIdentidad: document.querySelector("#documentoIdentidad").value,
-            cargo: document.querySelector("#cargo").value,
-            area: document.querySelector("#areaTrabajador").value,
-            estado: "Activo"
+            nombres: document.querySelector("#nombres").value.trim(),
+            documentoIdentidad: document.querySelector("#documentoIdentidad").value.trim(),
+            cargo: document.querySelector("#cargo").value.trim(),
+            area: document.querySelector("#areaTrabajador").value.trim()
         };
 
         try {
-
-            const respuesta = await fetch(
-                `${API_URL}/api/personal`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(trabajador)
-                }
-            );
+            const respuesta = await fetch(`${API_URL}/api/personal`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(trabajador)
+            });
 
             if (!respuesta.ok) {
-                throw new Error(
-                    "No se pudo registrar el trabajador"
-                );
+                const mensaje = await respuesta.text();
+                throw new Error(mensaje || "No se pudo registrar el trabajador.");
             }
 
-            const trabajadorCreado =
-                await respuesta.json();
+            const trabajadorCreado = await respuesta.json();
 
-            alert("Trabajador registrado correctamente");
+            alert(
+                `Trabajador ${trabajadorCreado.nombres} registrado correctamente.`
+            );
 
             formularioTrabajador.reset();
 
-            cargarTrabajadores();
+            await cargarTrabajadores();
 
-            console.log(
-                "Trabajador creado:",
-                trabajadorCreado
-            );
+            console.log("Trabajador creado:", trabajadorCreado);
 
         } catch (error) {
-
-            console.error(error);
+            console.error("Error al registrar trabajador:", error);
 
             alert(
-                "No se pudo registrar el trabajador."
+                error.message ||
+                "No se pudo registrar el trabajador. Verifica que el backend esté iniciado."
             );
         }
     });
 }
 
 
-/*PERSONAL - LISTAR TRABAJADORES*/
+/* PERSONAL - LISTAR TRABAJADORES */
 
 async function cargarTrabajadores() {
-
-    const lista =
-        document.querySelector("#listaTrabajadores");
+    const lista = document.querySelector("#listaTrabajadores");
 
     if (!lista) {
         return;
     }
 
     try {
-
-        const respuesta =
-            await fetch(`${API_URL}/api/personal`);
+        const respuesta = await fetch(`${API_URL}/api/personal`);
 
         if (!respuesta.ok) {
-            throw new Error(
-                "Error al obtener los trabajadores"
-            );
+            throw new Error("Error al obtener los trabajadores.");
         }
 
-        const trabajadores =
-            await respuesta.json();
-
+        const trabajadores = await respuesta.json();
 
         lista.innerHTML = "";
 
         if (trabajadores.length === 0) {
-
             lista.innerHTML = `
                 <tr>
-                    <td colspan="5">
-                        No hay trabajadores registrados.
-                    </td>
+                    <td colspan="5">No hay trabajadores registrados.</td>
                 </tr>
             `;
-
             return;
         }
 
         trabajadores.forEach(function (trabajador) {
+            const fila = document.createElement("tr");
 
-            const fila =
-                document.createElement("tr");
-
-            fila.innerHTML = `
-                <td>${trabajador.id}</td>
-                <td>${trabajador.nombres}</td>
-                <td>${trabajador.area}</td>
-                <td>${trabajador.cargo}</td>
-                <td>${trabajador.estado}</td>
-            `;
+            [
+                trabajador.id,
+                trabajador.nombres,
+                trabajador.area,
+                trabajador.cargo,
+                trabajador.estado
+            ].forEach(function (dato) {
+                const celda = document.createElement("td");
+                celda.textContent = dato ?? "";
+                fila.appendChild(celda);
+            });
 
             lista.appendChild(fila);
         });
 
     } catch (error) {
-
-        console.error(error);
+        console.error("Error al cargar trabajadores:", error);
 
         lista.innerHTML = `
             <tr>
                 <td colspan="5">
                     No se pudieron cargar los trabajadores.
+                    Verifica que el backend esté iniciado.
                 </td>
             </tr>
         `;
     }
 }
 
-/* ASISTENCIA - REGISTRAR Y CONSULTAR */
+
+/* ASISTENCIA - REGISTRAR */
 
 const formularioAsistencia =
     document.querySelector("#formAsistencia");
 
 if (formularioAsistencia) {
 
-    formularioAsistencia.addEventListener("submit", async function (event) {
+    formularioAsistencia.addEventListener(
+        "submit",
+        async function (event) {
 
-        event.preventDefault();
+            event.preventDefault();
 
-        const documento =
-            document.querySelector("#documentoAsistencia").value;
+            const documentoIdentidad =
+                document.querySelector(
+                    "#documentoAsistencia"
+                ).value.trim();
 
-        const tipo =
-            document.querySelector("#tipoAsistencia").value;
+            const tipo =
+                document.querySelector(
+                    "#tipoAsistencia"
+                ).value;
 
-        const hora =
-            document.querySelector("#horaAsistencia").value;
+            const hora =
+                document.querySelector(
+                    "#horaAsistencia"
+                ).value;
 
-        const resultado =
-            document.querySelector("#resultadoAsistencia");
+            // Combina la fecha actual con la hora ingresada.
+            const fechaActual = new Date();
+            const fecha = [
+                fechaActual.getFullYear(),
+                String(fechaActual.getMonth() + 1).padStart(2, "0"),
+                String(fechaActual.getDate()).padStart(2, "0")
+            ].join("-");
 
-        try {
+            const marcacion = {
+                documentoIdentidad: documentoIdentidad,
+                tipo: tipo,
+                fechaHora: `${fecha}T${hora}:00`
+            };
 
-            const ahora = new Date();
+            const resultado =
+                document.querySelector("#resultadoAsistencia");
 
-            const fecha =
-                ahora.toISOString().split("T")[0];
+            try {
 
-            const fechaHora =
-                `${fecha}T${hora}:00`;
+                const respuesta = await fetch(
+                    `${API_URL}/api/asistencia/marcar`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(marcacion)
+                    }
+                );
 
-            const respuesta = await fetch(
-                `${API_URL}/api/asistencia/marcar`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        documentoIdentidad: documento,
-                        tipo: tipo,
-                        fechaHora: fechaHora
-                    })
+                if (!respuesta.ok) {
+                    const mensaje = await respuesta.text();
+                    throw new Error(
+                        mensaje || `Error HTTP ${respuesta.status}`
+                    );
                 }
-            );
 
-            if (!respuesta.ok) {
+                const asistenciaRegistrada =
+                    await respuesta.json();
 
-                const mensaje =
-                    await respuesta.text();
+                resultado.textContent =
+                    `Asistencia registrada correctamente. ` +
+                    `ID: ${asistenciaRegistrada.id}`;
 
-                throw new Error(mensaje);
+                formularioAsistencia.reset();
+
+                console.log(
+                    "Asistencia registrada:",
+                    asistenciaRegistrada
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Error al registrar asistencia:",
+                    error
+                );
+
+                resultado.textContent =
+                    `No se pudo registrar la asistencia: ${error.message}`;
             }
-
-            const asistencia =
-                await respuesta.json();
-
-            resultado.innerHTML = `
-                <article>
-                    <p>
-                        Asistencia registrada correctamente.
-                    </p>
-
-                    <p>
-                        Tipo: ${asistencia.tipo}
-                    </p>
-
-                    <p>
-                        Hora: ${hora}
-                    </p>
-                </article>
-            `;
-
-            formularioAsistencia.reset();
-
-        } catch (error) {
-
-            console.error(error);
-
-            resultado.innerHTML = `
-                <article>
-                    <p>
-                        No se pudo registrar la asistencia.
-                    </p>
-                </article>
-            `;
         }
-
-    });
+    );
 }
+
 
 
 /* ASISTENCIA - CONSULTAR */
