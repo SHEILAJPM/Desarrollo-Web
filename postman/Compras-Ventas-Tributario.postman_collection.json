@@ -1,0 +1,1821 @@
+{
+  "info": {
+    "_postman_id": "04816147-72f1-415f-8ae4-62471172675c",
+    "name": "Compras-Ventas-Tributario",
+    "description": "Pruebas de los módulos compras, ventas, clientes, proveedores y tributario. Ejecutar en orden con el environment Local. Autenticación Basic a nivel de colección (admin); algunas peticiones la sobrescriben para probar 401/403.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{usuario}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{clave}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "usuario",
+      "value": "admin"
+    },
+    {
+      "key": "clave",
+      "value": "Admin123"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 Proveedores",
+      "item": [
+        {
+          "name": "Registrar proveedor (201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// RUC distinto en cada corrida para que el Runner sea repetible",
+                  "pm.environment.set(\"proveedor_ruc\", \"20\" + String(Date.now()).slice(-9));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Header Location apunta al recurso\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/proveedores/\"));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Devuelve el RUC enviado\", () => pm.expect(j.ruc).to.eql(pm.environment.get(\"proveedor_ruc\")));",
+                  "pm.environment.set(\"proveedor_id\", j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/proveedores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"{{proveedor_ruc}}\",\n  \"razonSocial\": \"Proveedor Postman S.A.C.\",\n  \"direccion\": \"Av. Javier Prado 100\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Listar proveedores (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es un arreglo\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));",
+                  "pm.test(\"Incluye el proveedor creado\", () => pm.expect(pm.response.json().map(p => p.ruc)).to.include(pm.environment.get(\"proveedor_ruc\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/proveedores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar proveedor RUC duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/proveedores",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "proveedores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"{{proveedor_ruc}}\",\n  \"razonSocial\": \"Duplicado S.A.C.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 Clientes",
+      "item": [
+        {
+          "name": "Registrar cliente DNI (201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"documento_cliente\", String(Date.now()).slice(-8));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"tipoDocumento deducido = DNI\", () => pm.expect(j.tipoDocumento).to.eql(\"DNI\"));",
+                  "pm.test(\"Header Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/clientes/\" + j.id));",
+                  "pm.environment.set(\"cliente_id\", j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/clientes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{documento_cliente}}\",\n  \"nombre\": \"Cliente Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Obtener cliente por id (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es el cliente creado\", () => pm.expect(pm.response.json().id).to.eql(Number(pm.environment.get(\"cliente_id\"))));",
+                  "pm.test(\"Tiene nombre\", () => pm.expect(pm.response.json().nombre).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar cliente (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Nombre actualizado\", () => pm.expect(pm.response.json().nombre).to.eql(\"Cliente Postman Editado\"));",
+                  "pm.test(\"Documento se mantiene\", () => pm.expect(pm.response.json().documento).to.eql(pm.environment.get(\"documento_cliente\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"{{documento_cliente}}\",\n  \"nombre\": \"Cliente Postman Editado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Buscar clientes por texto LIKE (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es un arreglo\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));",
+                  "pm.test(\"Encuentra al menos uno\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/buscar?texto=postman",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "postman"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cliente inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/999999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "999999999"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 Compras",
+      "item": [
+        {
+          "name": "Contar compras antes del rollback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es un arreglo\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));",
+                  "pm.environment.set(\"conteo_compras\", pm.response.json().length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar compra con simularError (500 + ROLLBACK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 500\", () => pm.response.to.have.status(500));",
+                  "pm.test(\"Mensaje del error simulado\", () => pm.expect(pm.response.json().mensaje).to.include(\"ERROR SIMULADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compras?simularError=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ],
+              "query": [
+                {
+                  "key": "simularError",
+                  "value": "true"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"{{proveedor_ruc}}\",\n  \"numeroComprobante\": \"F009-{{$timestamp}}\",\n  \"montoSinIgv\": 999.00,\n  \"fecha\": \"2026-08-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Verificar que la compra NO quedó (rollback)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La cantidad de compras no cambió\", () => pm.expect(pm.response.json().length).to.eql(Number(pm.environment.get(\"conteo_compras\"))));",
+                  "pm.test(\"Ninguna compra F009-\", () => pm.expect(pm.response.json().some(c => c.numeroComprobante.startsWith(\"F009-\"))).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar compra S/ 100.00 (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"IGV 18.00 y total 118.00\", () => { pm.expect(j.igv).to.eql(18.00); pm.expect(j.montoTotal).to.eql(118.00); });",
+                  "pm.test(\"Guarda la tasa aplicada\", () => pm.expect(j.tasaAplicada).to.eql(0.18));",
+                  "pm.environment.set(\"compra_id\", j.id);",
+                  "pm.environment.set(\"numero_compra\", j.numeroComprobante);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"{{proveedor_ruc}}\",\n  \"numeroComprobante\": \"F001-{{$timestamp}}\",\n  \"montoSinIgv\": 100.00,\n  \"fecha\": \"2026-08-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar compra comprobante duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"{{proveedor_ruc}}\",\n  \"numeroComprobante\": \"{{numero_compra}}\",\n  \"montoSinIgv\": 100.00,\n  \"fecha\": \"2026-08-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Obtener compra por id (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es la compra creada\", () => pm.expect(pm.response.json().id).to.eql(Number(pm.environment.get(\"compra_id\"))));",
+                  "pm.test(\"Trae datos del proveedor\", () => pm.expect(pm.response.json().rucProveedor).to.eql(pm.environment.get(\"proveedor_ruc\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras/{{compra_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "{{compra_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar compra (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"IGV recalculado 36.00\", () => pm.expect(pm.response.json().igv).to.eql(36.00));",
+                  "pm.test(\"Total 236.00\", () => pm.expect(pm.response.json().montoTotal).to.eql(236.00));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compras/{{compra_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "{{compra_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"{{proveedor_ruc}}\",\n  \"numeroComprobante\": \"{{numero_compra}}\",\n  \"montoSinIgv\": 200.00,\n  \"fecha\": \"2026-08-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "IGV de compras del periodo (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve un número\", () => pm.expect(pm.response.json()).to.be.a(\"number\"));",
+                  "pm.test(\"No es negativo\", () => pm.expect(pm.response.json()).to.be.at.least(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras/igv-periodo?desde=2026-08-01&hasta=2026-08-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "igv-periodo"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-08-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-08-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar compra con datos inválidos (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});",
+                  "pm.test(\"Errores por campo\", () => {",
+                  "    const e = pm.response.json().errores;",
+                  "    pm.expect(e).to.have.property(\"ruc\");",
+                  "    pm.expect(e).to.have.property(\"montoSinIgv\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ruc\": \"123\",\n  \"numeroComprobante\": \"F001-1\",\n  \"montoSinIgv\": -5,\n  \"fecha\": \"2026-08-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar compra con text/plain (415)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 415\", () => pm.response.to.have.status(415));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "esto no es JSON",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Compra inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras/999999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "999999999"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 Ventas",
+      "item": [
+        {
+          "name": "Registrar venta BOLETA para DNI (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"BOLETA con IGV 54.00\", () => { pm.expect(j.tipoComprobante).to.eql(\"BOLETA\"); pm.expect(j.igv).to.eql(54.00); });",
+                  "pm.test(\"Estado EMITIDA\", () => pm.expect(j.estado).to.eql(\"EMITIDA\"));",
+                  "pm.environment.set(\"venta_id\", j.id);",
+                  "pm.environment.set(\"numero_venta\", j.numeroComprobante);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentoCliente\": \"{{documento_cliente}}\",\n  \"numeroComprobante\": \"B001-{{$timestamp}}\",\n  \"montoSinIgv\": 300.00,\n  \"fecha\": \"2026-08-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Venta con prefijo F para DNI (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});",
+                  "pm.test(\"Explica que requiere BOLETA\", () => pm.expect(pm.response.json().mensaje).to.include(\"BOLETA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentoCliente\": \"{{documento_cliente}}\",\n  \"numeroComprobante\": \"F001-{{$timestamp}}\",\n  \"montoSinIgv\": 50.00,\n  \"fecha\": \"2026-08-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Venta comprobante duplicado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentoCliente\": \"{{documento_cliente}}\",\n  \"numeroComprobante\": \"{{numero_venta}}\",\n  \"montoSinIgv\": 300.00,\n  \"fecha\": \"2026-08-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Venta con cliente inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentoCliente\": \"00000001\",\n  \"numeroComprobante\": \"B001-1\",\n  \"montoSinIgv\": 10.00,\n  \"fecha\": \"2026-08-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reporte por comprobante (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Dos tipos: FACTURA y BOLETA\", () => pm.expect(pm.response.json().map(r => r.tipoComprobante)).to.eql([\"FACTURA\", \"BOLETA\"]));",
+                  "pm.test(\"Cantidades numéricas\", () => pm.response.json().forEach(r => pm.expect(r.cantidad).to.be.a(\"number\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/reportes/por-comprobante",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "reportes",
+                "por-comprobante"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reporte ticket promedio (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tiene ticketPromedio\", () => pm.expect(pm.response.json()).to.have.property(\"ticketPromedio\"));",
+                  "pm.test(\"No es negativo\", () => pm.expect(pm.response.json().ticketPromedio).to.be.at.least(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/reportes/ticket-promedio?desde=2026-08-01&hasta=2026-08-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "reportes",
+                "ticket-promedio"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-08-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-08-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Anular venta como contabilidad1 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Estado ANULADA\", () => pm.expect(pm.response.json().estado).to.eql(\"ANULADA\"));",
+                  "pm.test(\"Es la venta creada\", () => pm.expect(pm.response.json().id).to.eql(Number(pm.environment.get(\"venta_id\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{venta_id}}/anular",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "{{venta_id}}",
+                "anular"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "contabilidad1",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "Conta123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Anular dos veces (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{venta_id}}/anular",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "{{venta_id}}",
+                "anular"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "contabilidad1",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "Conta123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 Tributario",
+      "item": [
+        {
+          "name": "Resumen tributario (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Tiene crédito, débito y por pagar\", () => [\"igvCompras\", \"igvVentas\", \"igvPorPagar\", \"saldoAFavor\"].forEach(k => pm.expect(j).to.have.property(k)));",
+                  "pm.test(\"Nada negativo\", () => { pm.expect(j.igvPorPagar).to.be.at.least(0); pm.expect(j.saldoAFavor).to.be.at.least(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/resumen?desde=2026-08-01&hasta=2026-08-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "resumen"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-08-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-08-31"
+                }
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "contabilidad1",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "Conta123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen mensual agosto (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Desde 2026-08-01\", () => pm.expect(pm.response.json().desde).to.eql(\"2026-08-01\"));",
+                  "pm.test(\"Hasta 2026-08-31\", () => pm.expect(pm.response.json().hasta).to.eql(\"2026-08-31\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/resumen-mensual?anio=2026&mes=8",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "resumen-mensual"
+              ],
+              "query": [
+                {
+                  "key": "anio",
+                  "value": "2026"
+                },
+                {
+                  "key": "mes",
+                  "value": "8"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen mensual mes 13 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/resumen-mensual?anio=2026&mes=13",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "resumen-mensual"
+              ],
+              "query": [
+                {
+                  "key": "anio",
+                  "value": "2026"
+                },
+                {
+                  "key": "mes",
+                  "value": "13"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Configuración tributaria (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Incluye IGV\", () => pm.expect(pm.response.json().map(c => c.codigo)).to.include(\"IGV\"));",
+                  "pm.test(\"Tasa entre 0 y 1\", () => pm.response.json().forEach(c => pm.expect(c.tasa).to.be.within(0, 1)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/configuracion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "configuracion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar tasa IGV como admin (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tasa 0.18\", () => pm.expect(pm.response.json().tasa).to.eql(0.18));",
+                  "pm.test(\"Vigente\", () => pm.expect(pm.response.json().vigente).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/configuracion/IGV",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "configuracion",
+                "IGV"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tasa\": 0.1800\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Simulador S/ 118 con IGV (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Base 100.00\", () => pm.expect(pm.response.json().base).to.eql(100.00));",
+                  "pm.test(\"IGV 18.00\", () => pm.expect(pm.response.json().igv).to.eql(18.00));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/calcular?monto=118&incluyeIgv=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "calcular"
+              ],
+              "query": [
+                {
+                  "key": "monto",
+                  "value": "118"
+                },
+                {
+                  "key": "incluyeIgv",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 Seguridad",
+      "item": [
+        {
+          "name": "Sin credenciales (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "rrhh1 entra a compras (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "rrhh1",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "Rrhh123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "contabilidad1 cambia tasa IGV (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tributario/configuracion/IGV",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tributario",
+                "configuracion",
+                "IGV"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tasa\": 0.1800\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "contabilidad1",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "Conta123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "administracion1 anula venta (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{venta_id}}/anular",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ventas",
+                "{{venta_id}}",
+                "anular"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "administracion1",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "AdminArea123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 Limpieza",
+      "item": [
+        {
+          "name": "Eliminar cliente con ventas (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/clientes/{{cliente_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "clientes",
+                "{{cliente_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar compra (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Sin cuerpo\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/compras/{{compra_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "{{compra_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar proveedor sin compras (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Sin cuerpo\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/proveedores/{{proveedor_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "proveedores",
+                "{{proveedor_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Proveedor eliminado ya no existe (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Cuerpo ErrorResponse JSON\", () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property(\"timestamp\");",
+                  "    pm.expect(j).to.have.property(\"mensaje\");",
+                  "    pm.expect(j.status).to.eql(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/proveedores/{{proveedor_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "proveedores",
+                "{{proveedor_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

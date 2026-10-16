@@ -2,45 +2,55 @@ package desarrolloWeb.backend.pagos;
 
 import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.personal.trabajadores.Trabajador;
-import desarrolloWeb.backend.proveedores.Proveedor;
-import desarrolloWeb.backend.proveedores.ProveedorService;
+import desarrolloWeb.backend.proveedores.entity.Proveedor;
+import desarrolloWeb.backend.proveedores.service.ProveedorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class PagoServiceTest {
 
+    @Mock
     private PersonalService personalService;
+    @Mock
     private ProveedorService proveedorService;
+
     private PagoService pagoService;
     private Trabajador trabajador;
     private Proveedor proveedor;
 
     @BeforeEach
     void setUp() {
-        personalService = new PersonalService();
-        proveedorService = new ProveedorService();
         pagoService = new PagoService(personalService, proveedorService);
-        trabajador = personalService.registrar(
-                new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null));
-        proveedor = proveedorService.registrar("20123456789", "Distribuidora SAC");
+        trabajador = new Trabajador(1L, "Ana Torres", "70001234", "Analista", "Ventas", "ACTIVO");
+        proveedor = new Proveedor("20123456789", "Distribuidora SAC", null);
+        proveedor.setId(5L);
     }
 
     @Test
     void registrarConDocumentoInexistenteLanzaExcepcion() {
+        when(personalService.buscarPorDocumento("99999999")).thenReturn(Optional.empty());
+
         assertThrows(NoSuchElementException.class,
                 () -> pagoService.registrar("99999999", "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31)));
     }
 
     @Test
     void registrarQuedaComoPendienteLigadoAlTrabajador() {
-        Pago pago = pagoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
+        when(personalService.buscarPorDocumento("70001234")).thenReturn(Optional.of(trabajador));
+
+        Pago pago = pagoService.registrar("70001234", "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
 
         assertNotNull(pago.getId());
         assertEquals("TRABAJADOR", pago.getTipoBeneficiario());
@@ -52,14 +62,18 @@ class PagoServiceTest {
 
     @Test
     void registrarProveedorConRucInexistenteLanzaExcepcion() {
+        when(proveedorService.buscarPorRuc("99999999999")).thenReturn(Optional.empty());
+
         assertThrows(NoSuchElementException.class,
                 () -> pagoService.registrarProveedor("99999999999", "Factura F001-1", 500.0, LocalDate.of(2026, 8, 31)));
     }
 
     @Test
     void registrarProveedorQuedaComoPendienteLigadoAlProveedor() {
+        when(proveedorService.buscarPorRuc("20123456789")).thenReturn(Optional.of(proveedor));
+
         Pago pago = pagoService.registrarProveedor(
-                proveedor.getRuc(), "Factura F001-1", 500.0, LocalDate.of(2026, 8, 31));
+                "20123456789", "Factura F001-1", 500.0, LocalDate.of(2026, 8, 31));
 
         assertNotNull(pago.getId());
         assertEquals("PROVEEDOR", pago.getTipoBeneficiario());
@@ -71,8 +85,8 @@ class PagoServiceTest {
 
     @Test
     void marcarComoPagadoActualizaEstadoYFecha() {
-        Pago pago = pagoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
+        when(personalService.buscarPorDocumento("70001234")).thenReturn(Optional.of(trabajador));
+        Pago pago = pagoService.registrar("70001234", "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
 
         Pago pagado = pagoService.marcarComoPagado(pago.getId());
 
@@ -82,8 +96,8 @@ class PagoServiceTest {
 
     @Test
     void marcarComoPagadoDosVecesLanzaExcepcion() {
-        Pago pago = pagoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
+        when(personalService.buscarPorDocumento("70001234")).thenReturn(Optional.of(trabajador));
+        Pago pago = pagoService.registrar("70001234", "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
         pagoService.marcarComoPagado(pago.getId());
 
         assertThrows(IllegalStateException.class, () -> pagoService.marcarComoPagado(pago.getId()));
@@ -91,10 +105,9 @@ class PagoServiceTest {
 
     @Test
     void listarPendientesExcluyeLosYaPagados() {
-        Pago pendiente = pagoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
-        Pago pagado = pagoService.registrar(
-                trabajador.getDocumentoIdentidad(), "Sueldo julio", 1500.0, LocalDate.of(2026, 7, 31));
+        when(personalService.buscarPorDocumento("70001234")).thenReturn(Optional.of(trabajador));
+        Pago pendiente = pagoService.registrar("70001234", "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
+        Pago pagado = pagoService.registrar("70001234", "Sueldo julio", 1500.0, LocalDate.of(2026, 7, 31));
         pagoService.marcarComoPagado(pagado.getId());
 
         List<Pago> pendientes = pagoService.listarPendientes();
@@ -105,8 +118,9 @@ class PagoServiceTest {
 
     @Test
     void listarPorTrabajadorDevuelveSoloSusPagos() {
-        pagoService.registrar(trabajador.getDocumentoIdentidad(), "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
-        pagoService.registrar(trabajador.getDocumentoIdentidad(), "Sueldo julio", 1500.0, LocalDate.of(2026, 7, 31));
+        when(personalService.buscarPorDocumento("70001234")).thenReturn(Optional.of(trabajador));
+        pagoService.registrar("70001234", "Sueldo agosto", 1500.0, LocalDate.of(2026, 8, 31));
+        pagoService.registrar("70001234", "Sueldo julio", 1500.0, LocalDate.of(2026, 7, 31));
 
         List<Pago> pagos = pagoService.listarPorTrabajador(trabajador.getId());
 

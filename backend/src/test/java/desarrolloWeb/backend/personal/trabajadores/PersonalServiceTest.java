@@ -1,33 +1,44 @@
 package desarrolloWeb.backend.personal.trabajadores;
 
-import desarrolloWeb.backend.personal.trabajadores.PersonalService;
-import desarrolloWeb.backend.personal.trabajadores.Trabajador;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class PersonalServiceTest {
 
+    @Mock
+    private TrabajadorRepository trabajadorRepository;
+
+    @InjectMocks
     private PersonalService personalService;
 
-    @BeforeEach
-    void setUp() {
-        personalService = new PersonalService();
-    }
-
     @Test
-    void registrarAsignaIdYEstadoActivo() {
-        Trabajador nuevo = new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null);
+    void registrarAsignaEstadoActivoYDejaElIdALaBaseDeDatos() {
+        Trabajador nuevo = new Trabajador(99L, "Ana Torres", "70001234", "Analista", "Ventas", null);
+        when(trabajadorRepository.existsByDocumentoIdentidad("70001234")).thenReturn(false);
+        when(trabajadorRepository.save(any(Trabajador.class))).thenAnswer(inv -> {
+            Trabajador t = inv.getArgument(0);
+            assertNull(t.getId());
+            t.setId(1L);
+            return t;
+        });
 
         Trabajador creado = personalService.registrar(nuevo);
 
-        assertNotNull(creado.getId());
+        assertEquals(1L, creado.getId());
         assertEquals("ACTIVO", creado.getEstado());
-        assertEquals(1, personalService.listar(null, null).size());
     }
 
     @Test
@@ -35,11 +46,12 @@ class PersonalServiceTest {
         Trabajador sinNombre = new Trabajador(null, " ", "70001234", "Analista", "Ventas", null);
 
         assertThrows(IllegalArgumentException.class, () -> personalService.registrar(sinNombre));
+        verify(trabajadorRepository, never()).save(any());
     }
 
     @Test
     void registrarConDocumentoDuplicadoLanzaExcepcion() {
-        personalService.registrar(new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null));
+        when(trabajadorRepository.existsByDocumentoIdentidad("70001234")).thenReturn(true);
         Trabajador duplicado = new Trabajador(null, "Otro Nombre", "70001234", "Tecnico", "Almacen", null);
 
         assertThrows(IllegalStateException.class, () -> personalService.registrar(duplicado));
@@ -47,7 +59,8 @@ class PersonalServiceTest {
 
     @Test
     void buscarPorDocumentoEncuentraAlTrabajadorRegistrado() {
-        personalService.registrar(new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null));
+        when(trabajadorRepository.findAll()).thenReturn(List.of(
+                new Trabajador(1L, "Ana Torres", "70001234", "Analista", "Ventas", "ACTIVO")));
 
         Optional<Trabajador> encontrado = personalService.buscarPorDocumento("70001234");
 
@@ -57,18 +70,17 @@ class PersonalServiceTest {
 
     @Test
     void buscarPorIdInexistenteRetornaVacio() {
-        Optional<Trabajador> resultado = personalService.buscarPorId(999L);
+        when(trabajadorRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertTrue(resultado.isEmpty());
+        assertTrue(personalService.buscarPorId(999L).isEmpty());
     }
 
     @Test
     void listarFiltraPorAreaYEstado() {
-        personalService.registrar(new Trabajador(null, "Ana Torres", "70001234", "Analista", "Ventas", null));
-        Trabajador enAlmacen = personalService.registrar(
-                new Trabajador(null, "Luis Ramos", "70005678", "Tecnico", "Almacen", null));
-        personalService.eliminar(enAlmacen.getId());
-        personalService.registrar(new Trabajador(null, "Rosa Diaz", "70009999", "Tecnico", "Almacen", null));
+        when(trabajadorRepository.findAll()).thenReturn(List.of(
+                new Trabajador(1L, "Ana Torres", "70001234", "Analista", "Ventas", "ACTIVO"),
+                new Trabajador(2L, "Luis Ramos", "70005678", "Tecnico", "Almacen", "INACTIVO"),
+                new Trabajador(3L, "Rosa Diaz", "70009999", "Tecnico", "Almacen", "ACTIVO")));
 
         List<Trabajador> ventas = personalService.listar("Ventas", null);
         List<Trabajador> almacenActivos = personalService.listar("Almacen", "ACTIVO");
@@ -79,13 +91,13 @@ class PersonalServiceTest {
     }
 
     @Test
-    void eliminarQuitaAlTrabajadorDeLaLista() {
-        Trabajador creado = personalService.registrar(
-                new Trabajador(null, "Luis Ramos", "70005678", "Tecnico", "Almacen", null));
+    void eliminarDevuelveTrueSiExisteYFalseSiNo() {
+        when(trabajadorRepository.existsById(1L)).thenReturn(true);
+        when(trabajadorRepository.existsById(2L)).thenReturn(false);
 
-        boolean eliminado = personalService.eliminar(creado.getId());
-
-        assertTrue(eliminado);
-        assertTrue(personalService.buscarPorId(creado.getId()).isEmpty());
+        assertTrue(personalService.eliminar(1L));
+        assertFalse(personalService.eliminar(2L));
+        verify(trabajadorRepository).deleteById(1L);
+        verify(trabajadorRepository, never()).deleteById(2L);
     }
 }

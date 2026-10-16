@@ -64,6 +64,129 @@ CREATE TABLE `trabajadores` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+-- =====================================================================
+-- Compras, ventas y tributario (JPA). Los nombres coinciden con las
+-- entidades: Hibernate convierte razonSocial -> razon_social, etc.
+-- Todo el dinero es DECIMAL(12,2); la tasa es DECIMAL(5,4).
+-- =====================================================================
+
+--
+-- Table structure for table `proveedores`
+--
+
+DROP TABLE IF EXISTS `compras`;
+DROP TABLE IF EXISTS `ventas`;
+DROP TABLE IF EXISTS `proveedores`;
+DROP TABLE IF EXISTS `clientes`;
+DROP TABLE IF EXISTS `configuracion_tributaria`;
+
+CREATE TABLE `proveedores` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `ruc` varchar(11) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `razon_social` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `direccion` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_proveedores_ruc` (`ruc`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `clientes`
+--
+
+CREATE TABLE `clientes` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `documento` varchar(11) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nombre` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tipo_documento` enum('DNI','RUC') COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_clientes_documento` (`documento`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `compras`
+--
+
+CREATE TABLE `compras` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `proveedor_id` bigint NOT NULL,
+  `numero_comprobante` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fecha` date NOT NULL,
+  `monto_sin_igv` decimal(12,2) NOT NULL,
+  `igv` decimal(12,2) NOT NULL,
+  `monto_total` decimal(12,2) NOT NULL,
+  `tasa_aplicada` decimal(5,4) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_compras_proveedor_numero` (`proveedor_id`,`numero_comprobante`),
+  KEY `idx_compras_fecha` (`fecha`),
+  CONSTRAINT `fk_compras_proveedor` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `ventas`
+--
+
+CREATE TABLE `ventas` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `cliente_id` bigint NOT NULL,
+  `tipo_comprobante` enum('FACTURA','BOLETA') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `numero_comprobante` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fecha` date NOT NULL,
+  `monto_sin_igv` decimal(12,2) NOT NULL,
+  `igv` decimal(12,2) NOT NULL,
+  `monto_total` decimal(12,2) NOT NULL,
+  `tasa_aplicada` decimal(5,4) NOT NULL,
+  `estado` enum('EMITIDA','ANULADA') COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ventas_numero` (`numero_comprobante`),
+  KEY `idx_ventas_fecha` (`fecha`),
+  CONSTRAINT `fk_ventas_cliente` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `configuracion_tributaria`
+--
+
+CREATE TABLE `configuracion_tributaria` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `codigo` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tasa` decimal(5,4) NOT NULL,
+  `vigente` bit(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_configuracion_codigo` (`codigo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Datos de ejemplo
+-- Agosto 2026: compra 100.00 (IGV 18.00) y venta emitida 300.00 (IGV 54.00).
+-- La factura F001-1 de agosto está ANULADA: no cuenta en el resumen.
+-- Resultado esperado de /api/tributario/resumen-mensual?anio=2026&mes=8:
+--   crédito 18.00 · débito 54.00 · IGV por pagar 36.00
+--
+
+INSERT INTO `configuracion_tributaria` (`id`, `codigo`, `tasa`, `vigente`) VALUES
+  (1, 'IGV', 0.1800, b'1');
+
+INSERT INTO `proveedores` (`id`, `ruc`, `razon_social`, `direccion`) VALUES
+  (1, '20123456789', 'Distribuidora ACME S.A.C.', 'Av. Arequipa 1234, Lima'),
+  (2, '20987654321', 'Suministros del Sur E.I.R.L.', NULL);
+
+INSERT INTO `clientes` (`id`, `documento`, `nombre`, `tipo_documento`) VALUES
+  (1, '10203040', 'Carlos Mendoza', 'DNI'),
+  (2, '45678912', 'Lucía Paredes', 'DNI'),
+  (3, '20555666777', 'Comercial Lima S.A.C.', 'RUC');
+
+INSERT INTO `compras` (`id`, `proveedor_id`, `numero_comprobante`, `fecha`, `monto_sin_igv`, `igv`, `monto_total`, `tasa_aplicada`) VALUES
+  (1, 1, 'F001-101', '2026-08-05', 100.00, 18.00, 118.00, 0.1800),
+  (2, 2, 'F002-201', '2026-07-20', 250.00, 45.00, 295.00, 0.1800),
+  (3, 1, 'F001-102', '2026-09-03', 400.00, 72.00, 472.00, 0.1800);
+
+INSERT INTO `ventas` (`id`, `cliente_id`, `tipo_comprobante`, `numero_comprobante`, `fecha`, `monto_sin_igv`, `igv`, `monto_total`, `tasa_aplicada`, `estado`) VALUES
+  (1, 1, 'BOLETA',  'B001-1', '2026-08-10', 300.00, 54.00, 354.00, 0.1800, 'EMITIDA'),
+  (2, 3, 'FACTURA', 'F001-1', '2026-08-12', 200.00, 36.00, 236.00, 0.1800, 'ANULADA'),
+  (3, 2, 'BOLETA',  'B001-2', '2026-07-15', 150.00, 27.00, 177.00, 0.1800, 'EMITIDA'),
+  (4, 3, 'FACTURA', 'F001-2', '2026-09-05', 500.00, 90.00, 590.00, 0.1800, 'EMITIDA');
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

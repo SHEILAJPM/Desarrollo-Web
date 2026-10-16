@@ -2,57 +2,52 @@ package desarrolloWeb.backend.personal.documentos;
 
 import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.personal.trabajadores.Trabajador;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class DocumentoServiceTest {
 
+    @Mock
     private PersonalService personalService;
+    @Mock
+    private DocumentoRepository documentoRepository;
+
+    @InjectMocks
     private DocumentoService documentoService;
-    private Trabajador trabajador;
-
-    @BeforeEach
-    void setUp() {
-        personalService = new PersonalService();
-        documentoService = new DocumentoService(personalService);
-
-        trabajador = personalService.registrar(
-                new Trabajador(
-                        null,
-                        "Ana Torres",
-                        "70001234",
-                        "Analista",
-                        "Ventas",
-                        null
-                )
-        );
-    }
 
     @Test
     void registrarConDocumentoInexistenteLanzaExcepcion() {
-        assertThrows(
-                NoSuchElementException.class,
-                () -> documentoService.registrar(
-                        "99999999",
-                        "DNI",
-                        LocalDate.now().plusDays(10)
-                )
-        );
+        when(personalService.buscarPorDocumento("99999999")).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class,
+                () -> documentoService.registrar("99999999", "DNI", LocalDate.now().plusDays(10)));
     }
 
     @Test
     void registrarQuedaLigadoAlTrabajador() {
-        Documento documento = documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "Licencia de conducir",
-                LocalDate.now().plusDays(10)
-        );
+        Trabajador trabajador = new Trabajador(1L, "Ana Torres", "70001234", "Analista", "Ventas", "ACTIVO");
+        when(personalService.buscarPorDocumento("70001234")).thenReturn(Optional.of(trabajador));
+        when(documentoRepository.save(any(Documento.class))).thenAnswer(inv -> {
+            Documento d = inv.getArgument(0);
+            d.setId(1L);
+            return d;
+        });
+
+        Documento documento = documentoService.registrar("70001234", "Licencia de conducir",
+                LocalDate.now().plusDays(10));
 
         assertNotNull(documento.getId());
         assertEquals(trabajador.getId(), documento.getTrabajadorId());
@@ -61,20 +56,11 @@ class DocumentoServiceTest {
 
     @Test
     void listarProximosAVencerIncluyeSoloLosDentroDelRango() {
-        Documento porVencer = documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "Licencia de conducir",
-                LocalDate.now().plusDays(5)
-        );
+        Documento porVencer = documento(1L, LocalDate.now().plusDays(5));
+        when(documentoRepository.findAll()).thenReturn(List.of(
+                porVencer, documento(2L, LocalDate.now().plusDays(90)), documento(3L, LocalDate.now().minusDays(1))));
 
-        documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "Contrato",
-                LocalDate.now().plusDays(90)
-        );
-
-        List<Documento> proximos =
-                documentoService.listarProximosAVencer(30);
+        List<Documento> proximos = documentoService.listarProximosAVencer(30);
 
         assertEquals(1, proximos.size());
         assertEquals(porVencer.getId(), proximos.get(0).getId());
@@ -82,20 +68,10 @@ class DocumentoServiceTest {
 
     @Test
     void listarVencidosIncluyeSoloFechasPasadas() {
-        Documento vencido = documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "DNI",
-                LocalDate.now().minusDays(1)
-        );
+        Documento vencido = documento(1L, LocalDate.now().minusDays(1));
+        when(documentoRepository.findAll()).thenReturn(List.of(vencido, documento(2L, LocalDate.now().plusDays(10))));
 
-        documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "Contrato",
-                LocalDate.now().plusDays(10)
-        );
-
-        List<Documento> vencidos =
-                documentoService.listarVencidos();
+        List<Documento> vencidos = documentoService.listarVencidos();
 
         assertEquals(1, vencidos.size());
         assertEquals(vencido.getId(), vencidos.get(0).getId());
@@ -103,21 +79,17 @@ class DocumentoServiceTest {
 
     @Test
     void listarPorTrabajadorDevuelveSoloSusDocumentos() {
-        documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "DNI",
-                LocalDate.now().plusDays(30)
-        );
+        when(documentoRepository.findByTrabajadorId(1L)).thenReturn(List.of(new Documento(), new Documento()));
 
-        documentoService.registrar(
-                trabajador.getDocumentoIdentidad(),
-                "Contrato",
-                LocalDate.now().plusDays(60)
-        );
+        assertEquals(2, documentoService.listarPorTrabajador(1L).size());
+    }
 
-        List<Documento> documentos =
-                documentoService.listarPorTrabajador(trabajador.getId());
-
-        assertEquals(2, documentos.size());
+    private Documento documento(Long id, LocalDate vencimiento) {
+        Documento documento = new Documento();
+        documento.setId(id);
+        documento.setTrabajadorId(1L);
+        documento.setTipo("DNI");
+        documento.setFechaVencimiento(vencimiento);
+        return documento;
     }
 }

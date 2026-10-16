@@ -2,8 +2,8 @@ package desarrolloWeb.backend.pagos;
 
 import desarrolloWeb.backend.personal.trabajadores.PersonalService;
 import desarrolloWeb.backend.personal.trabajadores.Trabajador;
-import desarrolloWeb.backend.proveedores.Proveedor;
-import desarrolloWeb.backend.proveedores.ProveedorService;
+import desarrolloWeb.backend.proveedores.entity.Proveedor;
+import desarrolloWeb.backend.proveedores.service.ProveedorService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
