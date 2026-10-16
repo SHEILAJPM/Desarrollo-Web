@@ -1699,3 +1699,125 @@ cargarProveedoresParaPagos();
 cargarPagos();
 
 
+
+
+/* USUARIOS - CREAR Y LISTAR (solo administrador) */
+
+const formularioUsuario = document.querySelector("#formUsuario");
+const listaUsuarios = document.querySelector("#listaUsuarios");
+
+const ETIQUETAS_ROL = {
+    ADMIN: "Administrador",
+    RRHH: "Recursos Humanos",
+    CONTABILIDAD: "Contabilidad",
+    ADMINISTRACION: "Administración"
+};
+
+async function leerMensajeError(respuesta, mensajePorDefecto) {
+    try {
+        const error = await respuesta.json();
+        if (error.errores) {
+            return Object.values(error.errores).join(" ");
+        }
+        return error.mensaje || error.message || mensajePorDefecto;
+    } catch (e) {
+        return mensajePorDefecto;
+    }
+}
+
+async function cargarUsuarios() {
+    if (!listaUsuarios) {
+        return;
+    }
+
+    try {
+        const respuesta = await fetch(`${API_URL}/api/usuarios`);
+
+        if (!respuesta.ok) {
+            throw new Error("Error al obtener los usuarios.");
+        }
+
+        const usuarios = await respuesta.json();
+        listaUsuarios.innerHTML = "";
+
+        usuarios.forEach(function (usuario) {
+            const fila = document.createElement("tr");
+
+            const celdaUsuario = document.createElement("td");
+            celdaUsuario.textContent = usuario.username;
+
+            const celdaRol = document.createElement("td");
+            celdaRol.textContent = ETIQUETAS_ROL[usuario.rol] || usuario.rol;
+
+            const celdaEstado = document.createElement("td");
+            celdaEstado.textContent = usuario.activo ? "Activo" : "Inactivo";
+
+            const celdaAccion = document.createElement("td");
+            const boton = document.createElement("button");
+            boton.type = "button";
+            boton.textContent = usuario.activo ? "Desactivar" : "Activar";
+            boton.addEventListener("click", function () {
+                cambiarEstadoUsuario(usuario.id, !usuario.activo);
+            });
+            celdaAccion.appendChild(boton);
+
+            fila.append(celdaUsuario, celdaRol, celdaEstado, celdaAccion);
+            listaUsuarios.appendChild(fila);
+        });
+
+    } catch (error) {
+        console.error(error);
+        listaUsuarios.innerHTML =
+            '<tr><td colspan="4">No se pudieron cargar los usuarios.</td></tr>';
+    }
+}
+
+async function cambiarEstadoUsuario(id, activo) {
+    const respuesta = await fetch(
+        `${API_URL}/api/usuarios/${id}/estado?activo=${activo}`,
+        { method: "PATCH" }
+    );
+
+    if (!respuesta.ok) {
+        alert(await leerMensajeError(respuesta, "No se pudo cambiar el estado del usuario."));
+    }
+
+    await cargarUsuarios();
+}
+
+if (formularioUsuario) {
+    formularioUsuario.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const mensaje = document.querySelector("#usuarioMensaje");
+        mensaje.textContent = "";
+
+        const usuario = {
+            username: document.querySelector("#nuevoUsuario").value.trim(),
+            password: document.querySelector("#nuevaClave").value,
+            rol: document.querySelector("#nuevoRol").value
+        };
+
+        try {
+            const respuesta = await fetch(`${API_URL}/api/usuarios`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(usuario)
+            });
+
+            if (!respuesta.ok) {
+                throw new Error(await leerMensajeError(respuesta, "No se pudo crear el usuario."));
+            }
+
+            const creado = await respuesta.json();
+            alert(`Usuario ${creado.username} creado correctamente.`);
+            formularioUsuario.reset();
+            await cargarUsuarios();
+
+        } catch (error) {
+            mensaje.textContent = error.message;
+        }
+    });
+}
+
+cargarUsuarios();

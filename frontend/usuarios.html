@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Usuarios | Sistema de Gestión Empresarial</title>
+
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <script src="js/auth.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Gestión de Usuarios</h1>
+        <p>Crea usuarios y asigna el rol con el que ingresan al sistema</p>
+    </header>
+
+    <nav aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="personal.html">Personal</a>
+        <a href="compras.html">Compras</a>
+        <a href="ventas.html">Ventas</a>
+        <a href="pagos.html">Pagos</a>
+        <a href="proveedores.html">Proveedores</a>
+        <a href="usuarios.html">Usuarios</a>
+    </nav>
+
+    <main>
+
+        <section id="usuarios" class="tarjeta">
+
+            <h2>Nuevo usuario</h2>
+
+            <form id="formUsuario">
+
+                <label for="nuevoUsuario">Usuario</label>
+                <input type="text" id="nuevoUsuario" autocomplete="off" required
+                       pattern="[a-zA-Z0-9._\-]{3,50}" title="De 3 a 50 caracteres: letras, números, punto o guion">
+
+                <label for="nuevaClave">Contraseña</label>
+                <input type="password" id="nuevaClave" autocomplete="new-password" required minlength="6">
+
+                <label for="nuevoRol">Rol</label>
+                <select id="nuevoRol" required>
+                    <option value="">Selecciona un rol…</option>
+                    <option value="ADMIN">Administrador (todos los módulos)</option>
+                    <option value="RRHH">Recursos Humanos (Personal)</option>
+                    <option value="CONTABILIDAD">Contabilidad (Ventas y Pagos)</option>
+                    <option value="ADMINISTRACION">Administración (Ventas y Proveedores)</option>
+                </select>
+
+                <p id="usuarioMensaje" class="login-error" role="alert"></p>
+
+                <button type="submit">Crear usuario</button>
+
+            </form>
+
+        </section>
+
+        <section class="tarjeta">
+
+            <h2>Usuarios registrados</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="listaUsuarios">
+                    <tr><td colspan="4">Cargando…</td></tr>
+                </tbody>
+            </table>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Sistema de Gestión Empresarial</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>

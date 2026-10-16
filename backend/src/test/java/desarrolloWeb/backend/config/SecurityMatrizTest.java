@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -165,6 +166,25 @@ class SecurityMatrizTest {
     void regresionPersonal() throws Exception {
         mockMvc.perform(get("/api/personal").with(httpBasic("rrhh1", "Rrhh123")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Login · contabilidad1 · GET /api/personal → 200 y POST → 403 (solo consulta para pagos)")
+    void contabilidadConsultaPersonal() throws Exception {
+        mockMvc.perform(get("/api/personal").with(httpBasic("contabilidad1", "Conta123")))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/personal").with(httpBasic("contabilidad1", "Conta123"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Login · sin credenciales desde el frontend → 401 sin WWW-Authenticate")
+    void frontendSinVentanaNativa() throws Exception {
+        mockMvc.perform(get("/api/auth/me").header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().doesNotExist("WWW-Authenticate"));
     }
 
     @Test

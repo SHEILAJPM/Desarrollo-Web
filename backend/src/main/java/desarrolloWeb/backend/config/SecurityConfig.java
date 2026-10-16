@@ -8,13 +8,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -27,39 +28,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(
-            PasswordEncoder passwordEncoder) {
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuracion = new CorsConfiguration();
+        configuracion.setAllowedOriginPatterns(List.of("*"));
+        configuracion.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuracion.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
 
-        UserDetails administrador = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("Admin123"))
-                .roles("ADMIN")
-                .build();
-
-        UserDetails rrhh = User.builder()
-                .username("rrhh1")
-                .password(passwordEncoder.encode("Rrhh123"))
-                .roles("RRHH")
-                .build();
-
-        UserDetails contabilidad = User.builder()
-                .username("contabilidad1")
-                .password(passwordEncoder.encode("Conta123"))
-                .roles("CONTABILIDAD")
-                .build();
-
-        UserDetails administracion = User.builder()
-                .username("administracion1")
-                .password(passwordEncoder.encode("AdminArea123"))
-                .roles("ADMINISTRACION")
-                .build();
-
-        return new InMemoryUserDetailsManager(
-                administrador,
-                rrhh,
-                contabilidad,
-                administracion
-        );
+        UrlBasedCorsConfigurationSource fuente = new UrlBasedCorsConfigurationSource();
+        fuente.registerCorsConfiguration("/**", configuracion);
+        return fuente;
     }
 
     @Bean
@@ -70,6 +47,7 @@ public class SecurityConfig {
 
         http
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> {})
 
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 
@@ -83,6 +61,10 @@ public class SecurityConfig {
 
                 .requestMatchers("/api/auth/me")
                     .authenticated()
+
+                // Contabilidad necesita la lista de trabajadores para registrar pagos
+                .requestMatchers(HttpMethod.GET, "/api/personal")
+                    .hasAnyRole("ADMIN", "RRHH", "CONTABILIDAD")
 
                 .requestMatchers(
                     "/api/personal", "/api/personal/**",

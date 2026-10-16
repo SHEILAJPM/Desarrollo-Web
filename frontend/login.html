@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Iniciar sesión | Sistema de Gestión Empresarial</title>
+
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <script src="js/auth.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Sistema de Gestión Empresarial</h1>
+        <p>Plataforma de administración empresarial</p>
+    </header>
+
+    <main>
+
+        <section class="login-caja">
+
+            <h2>Iniciar sesión</h2>
+
+            <form id="formLogin">
+
+                <label for="usuario">Usuario</label>
+                <input type="text" id="usuario" autocomplete="username" required autofocus>
+
+                <label for="clave">Contraseña</label>
+                <input type="password" id="clave" autocomplete="current-password" required>
+
+                <p id="loginError" class="login-error" role="alert"></p>
+
+                <button type="submit" id="btnIngresar">Ingresar</button>
+
+            </form>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Sistema de Gestión Empresarial</p>
+    </footer>
+
+    <script>
+        // Si ya hay sesión, ir directo al inicio
+        if (obtenerSesion()) {
+            window.location.replace("index.html");
+        }
+
+        const formLogin = document.querySelector("#formLogin");
+        const loginError = document.querySelector("#loginError");
+        const btnIngresar = document.querySelector("#btnIngresar");
+
+        formLogin.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const usuario = document.querySelector("#usuario").value.trim();
+            const clave = document.querySelector("#clave").value;
+            const token = btoa(`${usuario}:${clave}`);
+
+            loginError.textContent = "";
+            btnIngresar.disabled = true;
+            btnIngresar.textContent = "Ingresando…";
+
+            try {
+                const respuesta = await fetch(`${AUTH_API_URL}/api/auth/me`, {
+                    headers: { "Authorization": `Basic ${token}` }
+                });
+
+                if (respuesta.status === 401) {
+                    throw new Error("Usuario o contraseña incorrectos.");
+                }
+
+                if (!respuesta.ok) {
+                    throw new Error("No se pudo iniciar sesión. Intenta nuevamente.");
+                }
+
+                const datos = await respuesta.json();
+
+                guardarSesion({
+                    usuario: datos.usuario,
+                    rol: datos.rol,
+                    token: token
+                });
+
+                window.location.replace("index.html");
+
+            } catch (error) {
+                loginError.textContent = error instanceof TypeError
+                    ? "No se pudo conectar con el servidor. Verifica que el backend esté iniciado."
+                    : error.message;
+
+                btnIngresar.disabled = false;
+                btnIngresar.textContent = "Ingresar";
+            }
+        });
+    </script>
+
+</body>
+
+</html>

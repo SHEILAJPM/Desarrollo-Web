@@ -30,7 +30,10 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 request.getRequestURI());
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setHeader("WWW-Authenticate", "Basic realm=\"desarrollo-web\"");
+        // El frontend envía X-Requested-With; sin este encabezado el navegador abriría su ventana nativa de login
+        if (request.getHeader("X-Requested-With") == null) {
+            response.setHeader("WWW-Authenticate", "Basic realm=\"desarrollo-web\"");
+        }
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.getWriter().write(jsonMapper.writeValueAsString(error));

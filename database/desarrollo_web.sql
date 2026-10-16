@@ -187,6 +187,30 @@ INSERT INTO `ventas` (`id`, `cliente_id`, `tipo_comprobante`, `numero_comprobant
   (3, 2, 'BOLETA',  'B001-2', '2026-07-15', 150.00, 27.00, 177.00, 0.1800, 'EMITIDA'),
   (4, 3, 'FACTURA', 'F001-2', '2026-09-05', 500.00, 90.00, 590.00, 0.1800, 'EMITIDA');
 
+--
+-- Table structure for table `usuarios`
+-- Usuarios del login. La contraseña se guarda cifrada con BCrypt;
+-- el backend también crea estos 4 usuarios al arrancar si no existen.
+--
+
+DROP TABLE IF EXISTS `usuarios`;
+CREATE TABLE `usuarios` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rol` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `activo` bit(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_usuarios_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Claves: admin/Admin123 · rrhh1/Rrhh123 · contabilidad1/Conta123 · administracion1/AdminArea123
+INSERT INTO `usuarios` (`id`, `username`, `password`, `rol`, `activo`) VALUES
+  (1, 'admin', '$2a$10$ZYB9kNbqqXs0IBWw4mtdIulZE26ji/XP8MgBaQSxEDf53GWKn06ey', 'ADMIN', b'1'),
+  (2, 'rrhh1', '$2a$10$unZbgE2T/LfYZ1V69pykAOg6v78JdpH/DyTKg./uvugBgyNu8f1xq', 'RRHH', b'1'),
+  (3, 'contabilidad1', '$2a$10$7y9NXgmRE6mtCxASn67m1.X6OJ.BJovENBEgdwEjY/JZQq1cDq8N6', 'CONTABILIDAD', b'1'),
+  (4, 'administracion1', '$2a$10$ki1rAIV8iuo0VvhHP3PmvO9Hk0iXZ8sWkwHoI6tWvI2D.I9hW7Bwa', 'ADMINISTRACION', b'1');
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
