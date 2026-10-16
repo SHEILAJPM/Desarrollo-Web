@@ -67,47 +67,47 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                // Permitir las solicitudes previas de CORS
+          
                 .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
 
-                // Consultar el usuario autenticado y su rol
+       
                 .requestMatchers("/api/auth/me")
                     .authenticated()
 
-                // Recursos Humanos
+             
                 .requestMatchers(
                     "/api/personal", "/api/personal/**",
                     "/api/asistencia", "/api/asistencia/**",
                     "/api/documentos", "/api/documentos/**"
                 ).hasAnyRole("ADMIN", "RRHH")
 
-                // Ventas: Contabilidad y Administración
+                
                 .requestMatchers(
                     "/api/ventas", "/api/ventas/**"
                 ).hasAnyRole(
                     "ADMIN", "CONTABILIDAD", "ADMINISTRACION"
                 )
 
-                // Contabilidad
+            
                 .requestMatchers(
                     "/api/pagos", "/api/pagos/**"
                 ).hasAnyRole("ADMIN", "CONTABILIDAD")
 
-                // Administración
+             
                 .requestMatchers(
                     "/api/proveedores", "/api/proveedores/**"
                 ).hasAnyRole("ADMIN", "ADMINISTRACION")
 
-                // Otras rutas API: solo administrador
+               
                 .requestMatchers("/api/**")
                     .hasRole("ADMIN")
 
-                // El resto requiere autenticación
+                
                 .anyRequest().authenticated()
             )
 
-            // Autenticación HTTP Basic
+           
             .httpBasic(Customizer.withDefaults());
 
         return http.build();
