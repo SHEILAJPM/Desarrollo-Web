@@ -3,6 +3,7 @@ package desarrolloWeb.backend.proveedores;
 import desarrolloWeb.backend.exception.DocumentoInvalidoException;
 import desarrolloWeb.backend.exception.RecursoNoEncontradoException;
 import desarrolloWeb.backend.exception.ReglaNegocioException;
+import desarrolloWeb.backend.pagos.PagoRepository;
 import desarrolloWeb.backend.proveedores.dto.ProveedorRequest;
 import desarrolloWeb.backend.proveedores.dto.ProveedorResponse;
 import desarrolloWeb.backend.proveedores.entity.Proveedor;
@@ -31,9 +32,26 @@ class ProveedorServiceTest {
 
     @Mock
     private ProveedorRepository proveedorRepository;
+    @Mock
+    private PagoRepository pagoRepository;
 
     @InjectMocks
     private ProveedorService proveedorService;
+
+    @Test
+    @DisplayName("no se puede eliminar un proveedor con pagos registrados")
+    void eliminarConPagos() {
+        Proveedor proveedor = new Proveedor(RUC, "Distribuidora ACME S.A.C.", null);
+        proveedor.setId(1L);
+        when(proveedorRepository.findById(1L)).thenReturn(Optional.of(proveedor));
+        when(pagoRepository.existsByProveedor_Id(1L)).thenReturn(true);
+
+        ReglaNegocioException error = assertThrows(ReglaNegocioException.class,
+                () -> proveedorService.eliminar(1L));
+
+        assertEquals("No se puede eliminar el proveedor porque tiene pagos registrados", error.getMessage());
+        verify(proveedorRepository, never()).delete(any());
+    }
 
     @Test
     @DisplayName("registrar guarda el proveedor y devuelve su id")

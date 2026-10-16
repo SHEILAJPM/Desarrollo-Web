@@ -3,6 +3,7 @@ package desarrolloWeb.backend.proveedores.service;
 import desarrolloWeb.backend.exception.DocumentoInvalidoException;
 import desarrolloWeb.backend.exception.RecursoNoEncontradoException;
 import desarrolloWeb.backend.exception.ReglaNegocioException;
+import desarrolloWeb.backend.pagos.PagoRepository;
 import desarrolloWeb.backend.proveedores.dto.ProveedorRequest;
 import desarrolloWeb.backend.proveedores.dto.ProveedorResponse;
 import desarrolloWeb.backend.proveedores.entity.Proveedor;
@@ -20,10 +21,12 @@ import java.util.Optional;
 public class ProveedorService {
 
     private final ProveedorRepository proveedorRepository;
+    private final PagoRepository pagoRepository;
     private final ValidadorDocumento validador = new ValidadorDocumento();
 
-    public ProveedorService(ProveedorRepository proveedorRepository) {
+    public ProveedorService(ProveedorRepository proveedorRepository, PagoRepository pagoRepository) {
         this.proveedorRepository = proveedorRepository;
+        this.pagoRepository = pagoRepository;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'ADMINISTRACION')")
@@ -77,6 +80,9 @@ public class ProveedorService {
     @Transactional
     public void eliminar(Long id) {
         Proveedor proveedor = obtenerEntidad(id);
+        if (pagoRepository.existsByProveedor_Id(id)) {
+            throw new ReglaNegocioException("No se puede eliminar el proveedor porque tiene pagos registrados");
+        }
         proveedorRepository.delete(proveedor);
         proveedorRepository.flush();
     }
