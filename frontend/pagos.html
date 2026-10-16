@@ -13,7 +13,7 @@
 
 <header>
     <h1>Gestión de Pagos</h1>
-    <p>Registro y seguimiento de pagos a trabajadores</p>
+    <p>Registro y seguimiento de pagos a trabajadores y proveedores</p>
 </header>
 
 <nav>
@@ -50,10 +50,25 @@
         <p id="formError"></p>
 
         <form id="pagoForm">
+            <label for="tipoBeneficiario">Beneficiario</label>
+            <select id="tipoBeneficiario" required>
+                <option value="TRABAJADOR">Trabajador</option>
+                <option value="PROVEEDOR">Proveedor</option>
+            </select>
+
+            <div id="trabajadorBeneficiario">
             <label for="trabajadorSelect">Trabajador</label>
             <select id="trabajadorSelect" required>
                 <option value="">Selecciona un trabajador…</option>
             </select>
+            </div>
+
+            <div id="proveedorBeneficiario" style="display:none;">
+            <label for="proveedorSelect">Proveedor</label>
+            <select id="proveedorSelect" disabled>
+                <option value="">Selecciona un proveedor…</option>
+            </select>
+            </div>
 
             <label for="concepto">Concepto</label>
             <input type="text" id="concepto" required placeholder="Ej. Sueldo agosto">
@@ -80,12 +95,19 @@
             <button type="button" id="tabPendientes">Pendientes</button>
             <p>
             <button type="button" id="tabTrabajador">Por trabajador</button>
+            <p>
+            <button type="button" id="tabProveedor">Por proveedor</button>
         </p>
 
         <div id="trabajadorFilterBox" style="display:none;">
             <label for="trabajadorIdInput">ID del trabajador</label>
             <input type="number" id="trabajadorIdInput" min="1" placeholder="Ej. 12">
             <button type="button" id="btnBuscarPorId">Buscar</button>
+        </div>
+        <div id="proveedorFilterBox" style="display:none;">
+            <label for="proveedorIdInput">ID del proveedor</label>
+            <input type="number" id="proveedorIdInput" min="1" placeholder="Ej. 12">
+            <button type="button" id="btnBuscarPorProveedor">Buscar</button>
         </div>
 
         <div class="tabla-contenedor">

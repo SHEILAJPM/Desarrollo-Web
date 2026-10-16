@@ -38,6 +38,11 @@ public class PagoController {
         );
     }
 
+    @GetMapping("/proveedor/{proveedorId}")
+    public ResponseEntity<List<Pago>> listarPorProveedor(@PathVariable Long proveedorId) {
+        return ResponseEntity.ok(pagoService.listarPorProveedor(proveedorId));
+    }
+
     @GetMapping
     public ResponseEntity<List<Pago>> listar() {
         return ResponseEntity.ok(pagoService.listarTodos());
@@ -49,11 +54,14 @@ public class PagoController {
 
         try {
             Pago creado = pagoService.registrar(
+                    request.tipoBeneficiario(),
                     request.documentoIdentidad(),
+                    request.rucProveedor(),
                     request.concepto(),
                     request.monto(),
                     request.fechaProgramada()
             );
+
 
             return ResponseEntity
                     .status(HttpStatus.CREATED)
@@ -63,6 +71,8 @@ public class PagoController {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

@@ -1153,13 +1153,14 @@ async function cargarProveedores() {
         const proveedores =
             await respuesta.json();
 
+        localStorage.setItem("proveedores", JSON.stringify(proveedores));
         lista.innerHTML = "";
 
         if (proveedores.length === 0) {
 
             lista.innerHTML = `
                 <tr>
-                    <td colspan="3">
+                    <td colspan="4">
                         No hay proveedores registrados.
                     </td>
                 </tr>
@@ -1173,11 +1174,15 @@ async function cargarProveedores() {
             const fila =
                 document.createElement("tr");
 
-            fila.innerHTML = `
-                <td>${proveedor.id}</td>
-                <td>${proveedor.ruc}</td>
-                <td>${proveedor.razonSocial}</td>
-            `;
+            [proveedor.id, proveedor.ruc, proveedor.razonSocial].forEach(function (dato) {
+                const celda = document.createElement("td");
+                celda.textContent = dato ?? "";
+                fila.appendChild(celda);
+            });
+
+            const acciones = document.createElement("td");
+            acciones.innerHTML = `<button type="button" data-proveedor-editar="${proveedor.id}">Editar</button> <button type="button" data-proveedor-eliminar="${proveedor.id}">Eliminar</button>`;
+            fila.appendChild(acciones);
 
             lista.appendChild(fila);
         });
@@ -1188,12 +1193,58 @@ async function cargarProveedores() {
 
         lista.innerHTML = `
             <tr>
-                <td colspan="3">
+                <td colspan="4">
                     No se pudieron cargar los proveedores.
                 </td>
             </tr>
         `;
     }
+}
+
+if (document.querySelector("#listaProveedores")) {
+    document.querySelector("#listaProveedores").addEventListener("click", async function (event) {
+        const botonEditar = event.target.closest("button[data-proveedor-editar]");
+        const botonEliminar = event.target.closest("button[data-proveedor-eliminar]");
+
+        if (botonEditar) {
+            const proveedorId = botonEditar.dataset.proveedorEditar;
+            const proveedor = JSON.parse(localStorage.getItem("proveedores") || "[]")
+                .find(item => String(item.id) === proveedorId);
+            if (!proveedor) {
+                await cargarProveedores();
+                return;
+            }
+            const ruc = prompt("RUC del proveedor:", proveedor.ruc);
+            if (ruc === null) return;
+            const razonSocial = prompt("Razón social:", proveedor.razonSocial);
+            if (razonSocial === null) return;
+            try {
+                const respuesta = await fetch(`${API_URL}/api/proveedores/${proveedorId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ruc: ruc.trim(), razonSocial: razonSocial.trim() })
+                });
+                if (!respuesta.ok) throw new Error(await respuesta.text());
+                await cargarProveedores();
+                await cargarProveedoresParaCompras();
+                await cargarProveedoresParaPagos();
+            } catch (error) {
+                alert(error.message || "No se pudo actualizar el proveedor.");
+            }
+        }
+
+        if (botonEliminar && confirm("¿Eliminar este proveedor?")) {
+            try {
+                const respuesta = await fetch(`${API_URL}/api/proveedores/${botonEliminar.dataset.proveedorEliminar}`, { method: "DELETE" });
+                if (!respuesta.ok) throw new Error(await respuesta.text());
+                await cargarProveedores();
+                await cargarProveedoresParaCompras();
+                await cargarProveedoresParaPagos();
+            } catch (error) {
+                alert(error.message || "No se pudo eliminar el proveedor.");
+            }
+        }
+    });
 }
 
 
@@ -1206,6 +1257,9 @@ const formularioPago =
 
 const trabajadorSelect =
     document.querySelector("#trabajadorSelect");
+
+const proveedorSelect =
+    document.querySelector("#proveedorSelect");
 
 const tbodyPagos =
     document.querySelector("#tbody");
@@ -1258,6 +1312,7 @@ async function cargarTrabajadoresParaPagos() {
             await respuesta.json();
 
 
+        localStorage.setItem("trabajadores", JSON.stringify(trabajadores));
         llenarSelectTrabajadores(trabajadores);
 
     } catch (error) {
@@ -1300,6 +1355,19 @@ async function cargarProveedoresParaPagos() {
             "proveedores",
             JSON.stringify(proveedores)
         );
+
+        if (proveedorSelect) {
+            proveedorSelect.innerHTML = '<option value="">Selecciona un proveedor...</option>';
+            proveedores.forEach(function (proveedor) {
+                const opcion = document.createElement("option");
+                opcion.value = proveedor.ruc;
+                opcion.textContent = `${proveedor.razonSocial} (${proveedor.ruc})`;
+                proveedorSelect.appendChild(opcion);
+            });
+            if (proveedores.length === 0) {
+                proveedorSelect.innerHTML = '<option value="">No hay proveedores registrados</option>';
+            }
+        }
 
     } catch (error) {
         console.error(error);
@@ -1440,12 +1508,32 @@ function actualizarResumenPagos() {
 
 if (formularioPago) {
 
+    const tipoBeneficiario = document.querySelector("#tipoBeneficiario");
+    const trabajadorBeneficiario = document.querySelector("#trabajadorBeneficiario");
+    const proveedorBeneficiario = document.querySelector("#proveedorBeneficiario");
+
+    function actualizarCamposBeneficiario() {
+        const esProveedor = tipoBeneficiario.value === "PROVEEDOR";
+        trabajadorBeneficiario.style.display = esProveedor ? "none" : "block";
+        proveedorBeneficiario.style.display = esProveedor ? "block" : "none";
+        trabajadorSelect.disabled = esProveedor;
+        trabajadorSelect.required = !esProveedor;
+        proveedorSelect.disabled = !esProveedor;
+        proveedorSelect.required = esProveedor;
+    }
+
+    tipoBeneficiario.addEventListener("change", actualizarCamposBeneficiario);
+    actualizarCamposBeneficiario();
+
     formularioPago.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
+        const esProveedor = tipoBeneficiario.value === "PROVEEDOR";
         const pago = {
-            documentoIdentidad: document.querySelector("#trabajadorSelect").value,
+            tipoBeneficiario: tipoBeneficiario.value,
+            documentoIdentidad: esProveedor ? null : trabajadorSelect.value,
+            rucProveedor: esProveedor ? proveedorSelect.value : null,
             concepto: document.querySelector("#concepto").value,
             monto: parseFloat(document.querySelector("#monto").value),
             fechaProgramada: document.querySelector("#fecha").value
@@ -1466,7 +1554,7 @@ if (formularioPago) {
 
             if (!respuesta.ok) {
                 const mensaje = await respuesta.text();
-                throw new Error(mensaje);
+                throw new Error(mensaje || "No se pudo registrar el pago.");
             }
 
             formularioPago.reset();
@@ -1489,8 +1577,7 @@ if (formularioPago) {
                 document.querySelector("#formError");
 
             if (formError) {
-                formError.textContent =
-                    "No se pudo registrar el pago.";
+                formError.textContent = error.message || "No se pudo registrar el pago.";
             }
         }
     });
@@ -1535,12 +1622,17 @@ const tabPendientes =
     document.querySelector("#tabPendientes");
 const tabTrabajador =
     document.querySelector("#tabTrabajador");
+const tabProveedor =
+    document.querySelector("#tabProveedor");
 const btnBuscarPorId =
     document.querySelector("#btnBuscarPorId");
+const btnBuscarPorProveedor =
+    document.querySelector("#btnBuscarPorProveedor");
 
 if (tabTodos) {
     tabTodos.addEventListener("click", function () {
         document.querySelector("#trabajadorFilterBox").style.display = "none";
+        document.querySelector("#proveedorFilterBox").style.display = "none";
         cargarPagos();
     });
 }
@@ -1548,13 +1640,22 @@ if (tabTodos) {
 if (tabPendientes) {
     tabPendientes.addEventListener("click", function () {
         document.querySelector("#trabajadorFilterBox").style.display = "none";
+        document.querySelector("#proveedorFilterBox").style.display = "none";
         cargarPagos(`${API_URL}/api/pagos/pendientes`);
     });
 }
 
 if (tabTrabajador) {
     tabTrabajador.addEventListener("click", function () {
+        document.querySelector("#proveedorFilterBox").style.display = "none";
         document.querySelector("#trabajadorFilterBox").style.display = "block";
+    });
+}
+
+if (tabProveedor) {
+    tabProveedor.addEventListener("click", function () {
+        document.querySelector("#trabajadorFilterBox").style.display = "none";
+        document.querySelector("#proveedorFilterBox").style.display = "block";
     });
 }
 
@@ -1569,6 +1670,15 @@ if (btnBuscarPorId) {
         }
 
         cargarPagos(`${API_URL}/api/pagos/trabajador/${trabajadorId}`);
+    });
+}
+
+if (btnBuscarPorProveedor) {
+    btnBuscarPorProveedor.addEventListener("click", function () {
+        const proveedorId = document.querySelector("#proveedorIdInput").value;
+        if (proveedorId) {
+            cargarPagos(`${API_URL}/api/pagos/proveedor/${proveedorId}`);
+        }
     });
 }
 

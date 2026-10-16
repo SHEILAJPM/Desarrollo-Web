@@ -1,18 +1,53 @@
 package desarrolloWeb.backend.pagos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import desarrolloWeb.backend.personal.trabajadores.Trabajador;
+import desarrolloWeb.backend.proveedores.Proveedor;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "pagos")
 public class Pago {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, length = 20)
     private String tipoBeneficiario;
-    private Long trabajadorId;
-    private Long proveedorId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trabajador_id")
+    private Trabajador trabajador;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proveedor_id")
+    private Proveedor proveedor;
+
+    @Column(nullable = false, length = 250)
     private String concepto;
-    private Double monto;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal monto;
+
+    @Column(nullable = false)
     private LocalDate fechaProgramada;
+
     private LocalDateTime fechaPago;
+
+    @Column(nullable = false, length = 20)
     private String estado;
 
     public Long getId() {
@@ -32,19 +67,29 @@ public class Pago {
     }
 
     public Long getTrabajadorId() {
-        return trabajadorId;
+        return trabajador == null ? null : trabajador.getId();
     }
 
-    public void setTrabajadorId(Long trabajadorId) {
-        this.trabajadorId = trabajadorId;
+    @JsonIgnore
+    public Trabajador getTrabajador() {
+        return trabajador;
+    }
+
+    public void setTrabajador(Trabajador trabajador) {
+        this.trabajador = trabajador;
     }
 
     public Long getProveedorId() {
-        return proveedorId;
+        return proveedor == null ? null : proveedor.getId();
     }
 
-    public void setProveedorId(Long proveedorId) {
-        this.proveedorId = proveedorId;
+    @JsonIgnore
+    public Proveedor getProveedor() {
+        return proveedor;
+    }
+
+    public void setProveedor(Proveedor proveedor) {
+        this.proveedor = proveedor;
     }
 
     public String getConcepto() {
@@ -56,11 +101,13 @@ public class Pago {
     }
 
     public Double getMonto() {
-        return monto;
+        return monto == null ? null : monto.doubleValue();
     }
 
     public void setMonto(Double monto) {
-        this.monto = monto;
+        this.monto = monto == null
+                ? null
+                : BigDecimal.valueOf(monto).setScale(2, RoundingMode.HALF_UP);
     }
 
     public LocalDate getFechaProgramada() {
